@@ -9,6 +9,7 @@ import HomePage from './pages/HomePage';
 import GamePage from './pages/GamePage';
 import GameResultPage from './pages/GameResultPage';
 import HistoryPage from './pages/HistoryPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 const router = createBrowserRouter([
   {
@@ -35,6 +36,10 @@ const router = createBrowserRouter([
       {
         path: "/history",
         element: <HistoryPage />,
+      },
+      {
+        path: "*",
+        element: <NotFoundPage />,
       },
     ]
   }

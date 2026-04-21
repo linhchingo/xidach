@@ -17,12 +17,13 @@ import GameStats from '../components/GameStats';
 import RoundHistory from '../components/RoundHistory';
 import PlayerHistoryDialog from '../components/PlayerHistoryDialog';
 import LoadingScreen from '../components/LoadingScreen';
+import NotFoundPage from './NotFoundPage';
 
 export default function GameResultPage() {
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { statistics, loading } = useSelector((state) => state.games);
+  const { statistics, loading, error } = useSelector((state) => state.games);
   const { roundHistory } = useSelector((state) => state.rounds);
   const [historyPlayer, setHistoryPlayer] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -30,12 +31,21 @@ export default function GameResultPage() {
   useEffect(() => {
     dispatch(fetchStatistics(id));
     dispatch(fetchRounds(id));
+
+    return () => {
+      dispatch({ type: 'games/clearStatistics' });
+      dispatch({ type: 'games/clearError' });
+    };
   }, [dispatch, id]);
 
   // Show loading until data for THIS specific game has arrived
   const isDataReady = statistics && String(statistics.game?.id) === String(id);
 
-  if (loading || !isDataReady) {
+  if (error) {
+    return <NotFoundPage />;
+  }
+
+  if (loading || !statistics || !isDataReady) {
     return <LoadingScreen />;
   }
 

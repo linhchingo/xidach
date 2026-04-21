@@ -27,12 +27,13 @@ import RoundHistory from '../components/RoundHistory';
 import BigWinDialog from '../components/BigWinDialog';
 import PlayerHistoryDialog from '../components/PlayerHistoryDialog';
 import LoadingScreen from '../components/LoadingScreen';
+import NotFoundPage from './NotFoundPage';
 
 export default function GamePage() {
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { currentGame, loading } = useSelector((state) => state.games);
+  const { currentGame, loading, error } = useSelector((state) => state.games);
   const { activeRound, roundHistory } = useSelector((state) => state.rounds);
 
   const [addPlayerOpen, setAddPlayerOpen] = useState(false);
@@ -54,6 +55,7 @@ export default function GamePage() {
     
     return () => {
       dispatch({ type: 'games/clearCurrentGame' });
+      dispatch({ type: 'games/clearError' });
       dispatch({ type: 'rounds/clearActiveRound' });
     };
   }, [dispatch, id]);
@@ -251,19 +253,12 @@ export default function GamePage() {
 
   const isCorrectGameLoaded = currentGame && String(currentGame.id) === String(id);
 
-  if (loading || !isCorrectGameLoaded) {
-    return <LoadingScreen />;
+  if (error) {
+    return <NotFoundPage />;
   }
 
-  if (!currentGame) {
-    return (
-      <Container sx={{ py: 8, textAlign: 'center' }}>
-        <Typography variant="h5" color="error">Cuộc chơi không tồn tại</Typography>
-        <Button onClick={() => navigate('/')} startIcon={<ArrowBackIcon />} sx={{ mt: 2 }}>
-          Về trang chủ
-        </Button>
-      </Container>
-    );
+  if (loading || !currentGame || !isCorrectGameLoaded) {
+    return <LoadingScreen />;
   }
 
   if (currentGame && String(currentGame.id) === String(id) && currentGame.status === 'completed') {

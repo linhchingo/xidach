@@ -126,8 +126,14 @@ const gamesSlice = createSlice({
         }
       })
       // fetchStatistics
+      .addCase(fetchStatistics.pending, (state) => { state.loading = true; })
       .addCase(fetchStatistics.fulfilled, (state, action) => {
+        state.loading = false;
         state.statistics = action.payload;
+      })
+      .addCase(fetchStatistics.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
       })
       // addPlayer
       .addCase(addPlayer.fulfilled, (state, action) => {
