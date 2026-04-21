@@ -8,10 +8,12 @@ import { useDispatch } from 'react-redux';
 import { createGame } from '../store/gamesSlice';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import useVisualViewport from '../hooks/useVisualViewport';
 
 export default function CreateGameDialog({ open, onClose }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { height: vpHeight, offsetTop: vpOffset } = useVisualViewport();
   const [name, setName] = useState('');
   const [gameDate, setGameDate] = useState(new Date().toISOString().split('T')[0]);
   const [moneyPerPoint, setMoneyPerPoint] = useState('1000');
@@ -52,7 +54,23 @@ export default function CreateGameDialog({ open, onClose }) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableRestoreFocus>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      disableRestoreFocus
+      sx={{
+        '&.MuiModal-root': {
+          top: `${vpOffset}px`,
+          height: `${vpHeight}px`,
+          bottom: 'auto',
+        },
+        '& .MuiDialog-paper': {
+          maxHeight: `calc(${vpHeight}px - 64px)`,
+        }
+      }}
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <SportsEsportsIcon color="primary" />

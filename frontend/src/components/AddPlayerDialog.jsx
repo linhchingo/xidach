@@ -7,9 +7,11 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { useDispatch } from 'react-redux';
 import { addPlayer } from '../store/gamesSlice';
 import { toast } from 'react-toastify';
+import useVisualViewport from '../hooks/useVisualViewport';
 
 export default function AddPlayerDialog({ open, onClose, gameId }) {
   const dispatch = useDispatch();
+  const { height: vpHeight, offsetTop: vpOffset } = useVisualViewport();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +36,23 @@ export default function AddPlayerDialog({ open, onClose, gameId }) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth disableRestoreFocus>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="xs"
+      fullWidth
+      disableRestoreFocus
+      sx={{
+        '&.MuiModal-root': {
+          top: `${vpOffset}px`,
+          height: `${vpHeight}px`,
+          bottom: 'auto',
+        },
+        '& .MuiDialog-paper': {
+          maxHeight: `calc(${vpHeight}px - 64px)`,
+        }
+      }}
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <PersonAddIcon color="secondary" />
