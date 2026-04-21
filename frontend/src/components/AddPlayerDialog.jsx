@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, Box
@@ -11,9 +11,20 @@ import useVisualViewport from '../hooks/useVisualViewport';
 
 export default function AddPlayerDialog({ open, onClose, gameId }) {
   const dispatch = useDispatch();
-  const { height: vpHeight, offsetTop: vpOffset } = useVisualViewport();
+  const { height: vpHeight, offsetTop: vpOffset, lockScroll, unlockScroll } = useVisualViewport();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Lock/unlock body scroll when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      lockScroll();
+    } else {
+      unlockScroll();
+    }
+    // Ensure unlock on unmount
+    return () => unlockScroll();
+  }, [open, lockScroll, unlockScroll]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,9 +58,11 @@ export default function AddPlayerDialog({ open, onClose, gameId }) {
           top: `${vpOffset}px`,
           height: `${vpHeight}px`,
           bottom: 'auto',
+          transition: 'top 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         },
         '& .MuiDialog-paper': {
           maxHeight: `calc(${vpHeight}px - 64px)`,
+          transition: 'max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }
       }}
     >
