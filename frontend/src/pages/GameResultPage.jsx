@@ -71,7 +71,7 @@ export default function GameResultPage() {
         gap: 1,
         borderBottom: '1px solid rgba(255,255,255,0.05)',
       }}>
-        <Button onClick={() => navigate(-1)} startIcon={<ArrowBackIcon />} size="small">
+        <Button onClick={() => navigate('/')} startIcon={<ArrowBackIcon />} size="small">
           Trang chủ
         </Button>
       </Box>

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../api/axios';
+import { removePlayer } from './gamesSlice';
 
 export const startRound = createAsyncThunk('rounds/startRound', async ({ gameId, hostPlayerId }, { rejectWithValue }) => {
   try {
@@ -82,6 +83,14 @@ const roundsSlice = createSlice({
       // fetchRounds
       .addCase(fetchRounds.fulfilled, (state, action) => {
         state.roundHistory = action.payload;
+      })
+      // removePlayer (from gamesSlice)
+      .addCase(removePlayer.fulfilled, (state, action) => {
+        if (state.activeRound && state.activeRound.results) {
+          state.activeRound.results = state.activeRound.results.filter(
+            r => r.player_id !== action.payload.playerId
+          );
+        }
       });
   },
 });

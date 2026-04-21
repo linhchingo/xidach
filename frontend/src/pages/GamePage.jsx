@@ -198,6 +198,10 @@ export default function GamePage() {
   };
 
   const handleRemovePlayerClick = (playerId) => {
+    if (activeRound && activePlayers.length <= 2) {
+      toast.warning('Không thể xoá người chơi khi ván chưa kết thúc và chỉ còn 2 người');
+      return;
+    }
     setPlayerToRemove(playerId);
     setRemoveConfirmOpen(true);
   };

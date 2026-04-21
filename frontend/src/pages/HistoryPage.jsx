@@ -35,7 +35,7 @@ export default function HistoryPage() {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-        <Button onClick={() => navigate(-1)} startIcon={<ArrowBackIcon />} size="small">
+        <Button onClick={() => navigate('/')} startIcon={<ArrowBackIcon />} size="small">
           Trang chủ
         </Button>
       </Box>

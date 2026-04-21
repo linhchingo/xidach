@@ -81,6 +81,23 @@ def remove_player(game_id, player_id):
         if not player:
             return jsonify({'error': 'Người chơi không tồn tại'}), 404
 
+        # Check if there's an active round
+        active_round = db.execute(
+            'SELECT id FROM rounds WHERE game_id = ? AND status = ?', (game_id, 'active')
+        ).fetchone()
+
+        if active_round and player['is_active'] == 1:
+            active_count = db.execute(
+                'SELECT COUNT(*) as count FROM players WHERE game_id = ? AND is_active = 1', (game_id,)
+            ).fetchone()['count']
+            
+            if active_count <= 2:
+                return jsonify({'error': 'Không thể xoá người chơi khi ván chưa kết thúc và chỉ còn 2 người'}), 400
+                
+            # Xoá kết quả của người chơi trong ván hiện tại (để lịch sử là không tham gia)
+            db.execute('DELETE FROM round_results WHERE round_id = ? AND player_id = ?', (active_round['id'], player_id))
+            db.commit()
+
         # Check if player has any round results
         has_results = db.execute(
             'SELECT COUNT(*) as count FROM round_results WHERE player_id = ?', (player_id,)
