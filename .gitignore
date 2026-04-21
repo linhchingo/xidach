@@ -1,0 +1,5 @@
+.roo/
+.idea/
+.vscode/
+*/.env
+*/*.env
