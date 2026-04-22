@@ -152,7 +152,14 @@ def submit_result(round_id):
 
 @rounds_bp.route('/api/rounds/<int:round_id>/end', methods=['PUT'])
 def end_round(round_id):
-    """End a round and apply points."""
+    """End a round and apply points.
+    
+    Optional body: { "default_losers": [player_id, ...] }
+    If provided, players in this list who haven't submitted a result will
+    automatically be assigned 'lose' before points are calculated.
+    """
+    data = request.get_json(silent=True) or {}
+    default_losers = data.get('default_losers', [])
     db = get_db()
     try:
         rnd = dict_from_row(db.execute('SELECT * FROM rounds WHERE id = ?', (round_id,)).fetchone())
@@ -184,11 +191,33 @@ def end_round(round_id):
         # If someone chose 'pay', round can end immediately (pay takes priority)
         has_pay = any(r['result'] == 'pay' for r in results)
         if not has_pay:
-            missing = [p['name'] for p in non_host_players if p['id'] not in submitted_player_ids]
-            if missing:
-                return jsonify({
-                    'error': f'Các người chơi chưa chọn kết quả: {", ".join(missing)}'
-                }), 400
+            missing_ids = [p['id'] for p in non_host_players if p['id'] not in submitted_player_ids]
+            if missing_ids:
+                if not default_losers:
+                    # No defaults provided — reject as before
+                    missing_names = [p['name'] for p in non_host_players if p['id'] in missing_ids]
+                    return jsonify({
+                        'error': f'Các người chơi chưa chọn kết quả: {", ".join(missing_names)}'
+                    }), 400
+                # Auto-assign 'lose' for players in default_losers who haven't submitted
+                for pid in default_losers:
+                    if pid in missing_ids:
+                        db.execute(
+                            '''INSERT INTO round_results (round_id, player_id, result, points_change)
+                               VALUES (?, ?, ?, ?)''',
+                            (round_id, pid, 'lose', -1)
+                        )
+                db.commit()
+                # Re-fetch results after insertion
+                results = dicts_from_rows(
+                    db.execute('''
+                        SELECT rr.*
+                        FROM round_results rr
+                        JOIN players p ON rr.player_id = p.id
+                        WHERE rr.round_id = ? AND p.is_active = 1
+                    ''', (round_id,)).fetchall()
+                )
+                submitted_player_ids = {r['player_id'] for r in results}
 
         # Build a points_change map for ALL players (including host)
         total_player_count = len(all_players)
@@ -299,6 +328,53 @@ def cancel_round(round_id):
         db.commit()
 
         return jsonify({'message': 'Ván chơi đã bị huỷ', 'round_id': round_id}), 200
+    finally:
+        db.close()
+
+
+@rounds_bp.route('/api/rounds/<int:round_id>/change-host', methods=['PUT'])
+def change_host(round_id):
+    """Change the host of an active round and reset all player results."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Request body is required'}), 400
+
+    new_host_id = data.get('new_host_id')
+    if not new_host_id:
+        return jsonify({'error': 'new_host_id is required'}), 400
+
+    db = get_db()
+    try:
+        rnd = dict_from_row(db.execute('SELECT * FROM rounds WHERE id = ?', (round_id,)).fetchone())
+        if not rnd:
+            return jsonify({'error': 'Ván chơi không tồn tại'}), 404
+        if rnd['status'] != 'active':
+            return jsonify({'error': 'Chỉ có thể đổi host khi ván đang diễn ra'}), 400
+        if new_host_id == rnd['host_player_id']:
+            return jsonify({'error': 'Người chơi này đã là host hiện tại'}), 400
+
+        # Validate new host is an active player in this game
+        new_host = dict_from_row(
+            db.execute(
+                'SELECT * FROM players WHERE id = ? AND game_id = ? AND is_active = 1',
+                (new_host_id, rnd['game_id'])
+            ).fetchone()
+        )
+        if not new_host:
+            return jsonify({'error': 'Host mới phải là người chơi đang hoạt động trong cuộc chơi'}), 400
+
+        # Reset all results for this round
+        db.execute('DELETE FROM round_results WHERE round_id = ?', (round_id,))
+        # Update host
+        db.execute('UPDATE rounds SET host_player_id = ? WHERE id = ?', (new_host_id, round_id))
+        db.commit()
+
+        # Return updated round object
+        updated_rnd = dict_from_row(db.execute('SELECT * FROM rounds WHERE id = ?', (round_id,)).fetchone())
+        updated_rnd['host_name'] = new_host['name']
+        updated_rnd['results'] = []
+
+        return jsonify(updated_rnd), 200
     finally:
         db.close()
 

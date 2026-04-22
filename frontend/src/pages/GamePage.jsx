@@ -17,7 +17,7 @@ import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import { toast } from 'react-toastify';
 
 import { fetchGame } from '../store/gamesSlice';
-import { startRound, submitResult, endRound, cancelRound, fetchRounds } from '../store/roundsSlice';
+import { startRound, submitResult, endRound, cancelRound, changeHost, fetchRounds } from '../store/roundsSlice';
 import { endGame, removePlayer, addPlayer } from '../store/gamesSlice';
 import PlayerCard from '../components/PlayerCard';
 import AddPlayerDialog from '../components/AddPlayerDialog';
@@ -39,9 +39,10 @@ export default function GamePage() {
   const [addPlayerOpen, setAddPlayerOpen] = useState(false);
   const [selectHostOpen, setSelectHostOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [endRoundConfirmOpen, setEndRoundConfirmOpen] = useState(false);
   const [endGameConfirmOpen, setEndGameConfirmOpen] = useState(false);
   const [manualHostId, setManualHostId] = useState(null);
-  const [selectHostMode, setSelectHostMode] = useState('start'); // 'start' or 'change'
+  const [selectHostMode, setSelectHostMode] = useState('start'); // 'start', 'change', or 'change_active'
   const [showHistory, setShowHistory] = useState(false);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
   const [playerToRemove, setPlayerToRemove] = useState(null);
@@ -137,9 +138,16 @@ export default function GamePage() {
     setSelectHostOpen(true);
   };
 
+  const handleOpenChangeHostDuringRound = () => {
+    setSelectHostMode('change_active');
+    setSelectHostOpen(true);
+  };
+
   const handleHostSelected = (selectedId) => {
     if (selectHostMode === 'start') {
       handleStartRound(selectedId);
+    } else if (selectHostMode === 'change_active') {
+      handleChangeHostDuringRound(selectedId);
     } else {
       setManualHostId(selectedId);
       toast.info(`Đã đổi Host sang: ${players.find(p => p.id === selectedId)?.name}`);
@@ -157,16 +165,49 @@ export default function GamePage() {
       });
   };
 
-  const handleEndRound = async () => {
+  const handleEndRound = async (defaultLosers = []) => {
     if (!activeRound) return;
     try {
-      const result = await dispatch(endRound(activeRound.id)).unwrap();
+      const hostPlayerId = activeRound.host_player_id;
+      await dispatch(endRound({ roundId: activeRound.id, defaultLosers })).unwrap();
       toast.success(`Ván ${activeRound.round_number} đã kết thúc!`);
       // Refresh game data to get updated points
-      dispatch(fetchGame(id));
-      dispatch(fetchRounds(id));
+      await dispatch(fetchGame(id));
+      await dispatch(fetchRounds(id));
+      // Auto-start next round with the same host
+      handleStartRound(hostPlayerId);
     } catch (err) {
       toast.error(err.error || 'Lỗi kết thúc ván');
+    }
+  };
+
+  // Branches on "Kết thúc ván" click: instant end if all submitted, else confirm dialog
+  const handleEndRoundClick = () => {
+    if (allNonHostSubmitted) {
+      handleEndRound();
+    } else {
+      setEndRoundConfirmOpen(true);
+    }
+  };
+
+  // Ends round early, assigning 'lose' to players who haven't submitted
+  const handleEndRoundWithDefaults = () => {
+    const missingPlayerIds = nonHostPlayers
+      .filter(p => !roundResults.some(r => r.player_id === p.id))
+      .map(p => p.id);
+    handleEndRound(missingPlayerIds);
+    setEndRoundConfirmOpen(false);
+  };
+
+  const handleChangeHostDuringRound = async (newHostId) => {
+    if (!activeRound) return;
+    try {
+      await dispatch(changeHost({ roundId: activeRound.id, newHostId })).unwrap();
+      // Persist the new host so it remains even after round cancel/end
+      setManualHostId(newHostId);
+      toast.info('Đã đổi Host. Tất cả kết quả trong ván đã được reset.');
+    } catch (err) {
+      toast.error(err.error || 'Lỗi đổi host');
     }
   };
 
@@ -360,20 +401,28 @@ export default function GamePage() {
                 sx={{ bgcolor: 'rgba(255, 171, 64, 0.15)', color: '#ffab40', height: 24, fontSize: '0.75rem' }}
               />
             </Box>
-            <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'flex-end', sm: 'flex-start' } }}>
-              <Tooltip title={!allNonHostSubmitted ? 'Tất cả người chơi phải chọn kết quả' : ''}>
-                <span>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    size="small"
-                    startIcon={<StopIcon />}
-                    onClick={handleEndRound}
-                    disabled={!allNonHostSubmitted}
-                  >
-                    Kết thúc ván
-                  </Button>
-                </span>
+            <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'flex-end', sm: 'flex-start' }, flexWrap: 'wrap' }}>
+              <Tooltip
+                title={!allNonHostSubmitted ? 'Một số người chơi chưa chọn — nhấn để kết thúc sớm' : 'Tất cả đã chọn xong!'}
+                placement="top"
+              >
+                <Button
+                  variant="contained"
+                  color="success"
+                  size="small"
+                  startIcon={<StopIcon />}
+                  onClick={handleEndRoundClick}
+                  sx={{
+                    ...(allNonHostSubmitted && {
+                      animation: 'heartbeat 1.5s ease-in-out infinite',
+                      outline: '2px solid',
+                      outlineColor: 'success.main',
+                      outlineOffset: '2px',
+                    }),
+                  }}
+                >
+                  Kết thúc ván
+                </Button>
               </Tooltip>
               <Button
                 variant="outlined"
@@ -383,6 +432,25 @@ export default function GamePage() {
                 onClick={() => setCancelConfirmOpen(true)}
               >
                 Huỷ ván
+              </Button>
+              <Button
+                variant="outlined"
+                color="warning"
+                size="small"
+                startIcon={<StarIcon />}
+                onClick={handleOpenChangeHostDuringRound}
+              >
+                Đổi Host
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                color="error"
+                startIcon={<FlagIcon />}
+                onClick={() => setEndGameConfirmOpen(true)}
+                sx={{ borderStyle: 'dashed' }}
+              >
+                Kết thúc
               </Button>
             </Box>
           </Box>
@@ -566,9 +634,15 @@ export default function GamePage() {
       <SelectHostDialog
         open={selectHostOpen}
         onClose={() => setSelectHostOpen(false)}
-        players={players}
+        players={
+          selectHostMode === 'change_active'
+            ? players.filter(p => p.id !== hostId)
+            : selectHostMode === 'change'
+              ? players.filter(p => p.id !== currentHostId)
+              : players
+        }
         onSelectHost={handleHostSelected}
-        currentHostId={currentHostId}
+        currentHostId={selectHostMode === 'start' ? currentHostId : null}
         disableRestoreFocus
       />
       <ConfirmDialog
@@ -579,11 +653,22 @@ export default function GamePage() {
         message="Bạn có chắc muốn huỷ ván này? Điểm của ván này sẽ không được tính."
       />
       <ConfirmDialog
+        open={endRoundConfirmOpen}
+        onClose={() => setEndRoundConfirmOpen(false)}
+        onConfirm={handleEndRoundWithDefaults}
+        title="Kết thúc ván sớm"
+        message={`Có ${nonHostPlayers.filter(p => !roundResults.some(r => r.player_id === p.id)).length} người chơi chưa chọn kết quả. Nếu tiếp tục, họ sẽ bị mặc định là “Thua”. Bạn có muốn tiếp tục?`}
+        confirmText="Kết thúc ván"
+        color="warning"
+      />
+      <ConfirmDialog
         open={endGameConfirmOpen}
         onClose={() => setEndGameConfirmOpen(false)}
         onConfirm={handleEndGame}
         title="Kết thúc cuộc chơi"
-        message="Bạn có chắc muốn kết thúc cuộc chơi? Kết quả sẽ được tổng hợp và không thể tiếp tục chơi."
+        message={activeRound
+          ? 'Ván đang chơi sẽ bị XOÁ (không tính điểm). Bạn có chắc muốn kết thúc toàn bộ cuộc chơi?'
+          : 'Bạn có chắc muốn kết thúc cuộc chơi? Kết quả sẽ được tổng hợp và không thể tiếp tục chơi.'}
         confirmText="Kết thúc"
         color="warning"
       />

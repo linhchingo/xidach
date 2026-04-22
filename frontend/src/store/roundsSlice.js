@@ -20,9 +20,10 @@ export const submitResult = createAsyncThunk('rounds/submitResult', async ({ rou
   }
 });
 
-export const endRound = createAsyncThunk('rounds/endRound', async (roundId, { rejectWithValue }) => {
+export const endRound = createAsyncThunk('rounds/endRound', async ({ roundId, defaultLosers = [] }, { rejectWithValue }) => {
   try {
-    const res = await api.put(`/rounds/${roundId}/end`);
+    const body = defaultLosers.length > 0 ? { default_losers: defaultLosers } : {};
+    const res = await api.put(`/rounds/${roundId}/end`, body);
     return res.data;
   } catch (err) {
     return rejectWithValue(err.response?.data || { error: 'Lỗi kết thúc ván' });
@@ -35,6 +36,15 @@ export const cancelRound = createAsyncThunk('rounds/cancelRound', async (roundId
     return res.data;
   } catch (err) {
     return rejectWithValue(err.response?.data || { error: 'Lỗi huỷ ván' });
+  }
+});
+
+export const changeHost = createAsyncThunk('rounds/changeHost', async ({ roundId, newHostId }, { rejectWithValue }) => {
+  try {
+    const res = await api.put(`/rounds/${roundId}/change-host`, { new_host_id: newHostId });
+    return res.data;
+  } catch (err) {
+    return rejectWithValue(err.response?.data || { error: 'Lỗi đổi host' });
   }
 });
 
@@ -79,6 +89,11 @@ const roundsSlice = createSlice({
       // cancelRound
       .addCase(cancelRound.fulfilled, (state) => {
         state.activeRound = null;
+      })
+      // changeHost
+      .addCase(changeHost.fulfilled, (state, action) => {
+        // Replace activeRound with updated data (new host, empty results)
+        state.activeRound = action.payload;
       })
       // fetchRounds
       .addCase(fetchRounds.fulfilled, (state, action) => {

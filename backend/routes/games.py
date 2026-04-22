@@ -127,12 +127,14 @@ def end_game(game_id):
         if game['status'] == 'completed':
             return jsonify({'error': 'Cuộc chơi đã kết thúc'}), 400
 
-        # Check if there's an active round
+        # Check if there's an active round — if so, delete it entirely (not counted)
         active_round = db.execute(
             'SELECT id FROM rounds WHERE game_id = ? AND status = ?', (game_id, 'active')
         ).fetchone()
         if active_round:
-            return jsonify({'error': 'Vui lòng kết thúc hoặc huỷ ván đang chơi trước'}), 400
+            db.execute('DELETE FROM round_results WHERE round_id = ?', (active_round['id'],))
+            db.execute('DELETE FROM rounds WHERE id = ?', (active_round['id'],))
+            db.commit()
 
         # Check round count (excluding cancelled ones)
         round_count = db.execute(
