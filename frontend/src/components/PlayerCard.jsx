@@ -12,18 +12,18 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import BoltIcon from '@mui/icons-material/Bolt';
 
 const resultConfig = {
-  win:      { label: 'Thắng',     color: 'success', icon: <EmojiEventsIcon fontSize="small" /> },
-  win_big:  { label: 'Thắng x2',    color: 'warning', icon: <BoltIcon fontSize="small" /> },
-  draw:     { label: 'Hoà',       color: 'default',  icon: <HandshakeIcon fontSize="small" /> },
-  lose:     { label: 'Thua',      color: 'error',   icon: <ThumbDownIcon fontSize="small" /> },
-  lose_big: { label: 'Thua x2',     color: 'error',   icon: <BoltIcon fontSize="small" /> },
-  pay:      { label: 'Đền',       color: 'info',    icon: <PaymentIcon fontSize="small" /> },
+  win: { label: 'Thắng', color: 'success', icon: <EmojiEventsIcon fontSize="small" /> },
+  win_big: { label: 'Thắng x2', color: 'warning', icon: <BoltIcon fontSize="small" /> },
+  draw: { label: 'Hoà', color: 'default', icon: <HandshakeIcon fontSize="small" /> },
+  lose: { label: 'Thua', color: 'error', icon: <ThumbDownIcon fontSize="small" /> },
+  lose_big: { label: 'Thua x2', color: 'error', icon: <BoltIcon fontSize="small" /> },
+  pay: { label: 'Đền', color: 'info', icon: <PaymentIcon fontSize="small" /> },
 };
 
 // Bảng màu cho badge kết quả hiện tại
 const resultBadgeStyle = {
-  win_big:  { bgcolor: 'rgba(255,171,64,0.15)', color: '#ffab40', border: '1px solid rgba(255,171,64,0.4)' },
-  lose_big: { bgcolor: 'rgba(255,82,82,0.15)',  color: '#ff5252', border: '1px solid rgba(255,82,82,0.4)' },
+  win_big: { bgcolor: 'rgba(255,171,64,0.15)', color: '#ffab40', border: '1px solid rgba(255,171,64,0.4)' },
+  lose_big: { bgcolor: 'rgba(255,82,82,0.15)', color: '#ff5252', border: '1px solid rgba(255,82,82,0.4)' },
 };
 
 // Thứ tự hiển thị các nút cho non-host: 3 cột hàng 1, 2+1 hàng 2
@@ -62,7 +62,7 @@ export default function PlayerCard({
   return (
     <Card
       sx={{
-        height: '100%', width: '100%',
+        height: '100%', width: '100%', minWidth: 0,
         display: 'flex', flexDirection: 'column',
         position: 'relative', overflow: 'visible',
         bgcolor: isActive
@@ -127,13 +127,13 @@ export default function PlayerCard({
 
       <CardContent sx={{ p: { xs: 1.5, sm: 2 }, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Avatar + Name */}
-        <Box 
+        <Box
           onClick={() => onShowHistory && onShowHistory(player)}
-          sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: { xs: 1, sm: 1.5 }, 
-            mb: 1, 
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: { xs: 1, sm: 1.5 },
+            mb: 1,
             position: 'relative',
             cursor: 'pointer',
             transition: 'opacity 0.2s',
@@ -160,8 +160,10 @@ export default function PlayerCard({
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               variant="subtitle2" fontWeight={700} noWrap
-              sx={{ lineHeight: 1.2, fontSize: { xs: '0.85rem', sm: '1rem' },
-                    textDecoration: isActive ? 'none' : 'line-through' }}
+              sx={{
+                lineHeight: 1.2, fontSize: { xs: '0.85rem', sm: '1rem' },
+                textDecoration: isActive ? 'none' : 'line-through'
+              }}
             >
               {player.name}{!isActive && ' (Rời đi)'}
             </Typography>
@@ -192,10 +194,10 @@ export default function PlayerCard({
         {roundActive && !isHost && isActive && (
           <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             {/* Row 1: Thắng | Thắng đậm | Hoà (ô giữa rộng hơn để chứa chữ dài) */}
-            <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: { xs: '1fr 1.3fr 1fr', sm: '1fr 1fr 1fr' }, 
-              gap: 0.5 
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: 'minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr)', sm: '1fr 1fr 1fr' },
+              gap: 0.5
             }}>
               {['win', 'win_big', 'draw'].map((result) => (
                 <ActionButton
@@ -205,7 +207,7 @@ export default function PlayerCard({
               ))}
             </Box>
             {/* Row 2: Thua | Đền (full width) */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.5 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 0.5 }}>
               {['lose', 'pay'].map((result) => (
                 <ActionButton
                   key={result} result={result} currentResult={currentResult}
@@ -270,11 +272,12 @@ function ActionButton({ result, currentResult, onSelect }) {
         fontSize: { xs: '0.48rem', sm: '0.65rem' },
         px: { xs: 0.1, sm: 0.4 }, py: 0.5,
         minWidth: 0, height: 32,
-        whiteSpace: 'nowrap',
+        whiteSpace: 'normal',
+        lineHeight: 1.1,
         letterSpacing: { xs: '-0.02em', sm: 'normal' },
-        '& .MuiButton-startIcon': { 
-          marginRight: { xs: 0.1, sm: 0.3 }, 
-          marginLeft: { xs: -0.6, sm: -0.2 } 
+        '& .MuiButton-startIcon': {
+          marginRight: { xs: 0, sm: 0.3 },
+          marginLeft: { xs: 0, sm: -0.2 },
         },
         ...(isSelected && { boxShadow: `0 0 8px ${glowMap[result] || 'transparent'}` }),
       }}

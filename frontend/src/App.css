@@ -14,6 +14,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+#root {
+  width: 100%;
+  max-width: 100vw;
+}
+
 /* Override Bootstrap dark theme conflicts */
 .btn-check:focus + .btn,
 .btn:focus {

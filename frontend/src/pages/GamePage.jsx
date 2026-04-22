@@ -307,7 +307,7 @@ export default function GamePage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 0, sm: 3 } }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 3 }, overflowX: 'hidden' }}>
       {/* Header (Sticky) */}
       <Box sx={{ 
         position: 'sticky', 
@@ -315,7 +315,8 @@ export default function GamePage() {
         zIndex: 1100, 
         bgcolor: 'background.default',
         py: { xs: 1.5, sm: 2 },
-        px: { xs: 2, sm: 0 },
+        px: { xs: 1.5, sm: 3 },
+        mx: { xs: -1.5, sm: -3 },
         borderBottom: '1px solid rgba(255,255,255,0.05)',
         mb: 3,
         display: 'flex',
@@ -343,21 +344,21 @@ export default function GamePage() {
         />
       </Box>
 
-      <Box sx={{ px: { xs: 2, sm: 0 } }}>
+      <Box sx={{ width: '100%' }}>
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid xs={6} sm={3}>
+          <Grid item xs={6} sm={3}>
             <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Ván chơi</Typography>
               <Typography variant="h6" fontWeight={700}>{roundHistory.length}</Typography>
             </Paper>
           </Grid>
-          <Grid xs={6} sm={3}>
+          <Grid item xs={6} sm={3}>
             <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Người chơi</Typography>
               <Typography variant="h6" fontWeight={700}>{activePlayers.length}</Typography>
             </Paper>
           </Grid>
-          <Grid xs={6} sm={3}>
+          <Grid item xs={6} sm={3}>
             <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Host hiện tại</Typography>
               <Typography variant="h6" fontWeight={700} noWrap sx={{ fontSize: '0.9rem', pt: 0.5 }}>
@@ -365,7 +366,7 @@ export default function GamePage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid xs={6} sm={3}>
+          <Grid item xs={6} sm={3}>
             <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Mỗi điểm</Typography>
               <Typography variant="h6" fontWeight={700}>{parseInt(currentGame?.money_per_point || 0).toLocaleString('vi-VN')}đ</Typography>
@@ -384,6 +385,8 @@ export default function GamePage() {
           sx={{
             p: 2,
             mb: 3,
+            mx: { xs: -1.5, sm: 0 },
+            borderRadius: { xs: 0, sm: 2 },
             background: 'linear-gradient(135deg, rgba(124, 77, 255, 0.12), rgba(0, 229, 255, 0.08))',
             border: '1px solid rgba(124, 77, 255, 0.3)',
           }}
@@ -532,12 +535,12 @@ export default function GamePage() {
       <Box sx={{ 
         display: 'grid', 
         gridTemplateColumns: { 
-          xs: 'repeat(2, 1fr)', 
-          sm: 'repeat(2, 1fr)', 
-          md: 'repeat(3, 1fr)', 
-          lg: 'repeat(4, 1fr)' 
+          xs: 'repeat(2, minmax(0, 1fr))', 
+          sm: 'repeat(2, minmax(0, 1fr))', 
+          md: 'repeat(3, minmax(0, 1fr))', 
+          lg: 'repeat(4, minmax(0, 1fr))' 
         }, 
-        gap: { xs: 1.5, sm: 2 }, 
+        gap: { xs: 1, sm: 2 }, 
         mb: 4,
         alignItems: 'stretch'
       }}>
@@ -580,11 +583,11 @@ export default function GamePage() {
           <Box sx={{ 
             display: 'grid', 
             gridTemplateColumns: { 
-              xs: 'repeat(2, 1fr)', 
-              sm: 'repeat(2, 1fr)', 
-              md: 'repeat(4, 1fr)' 
+              xs: 'repeat(2, minmax(0, 1fr))', 
+              sm: 'repeat(2, minmax(0, 1fr))', 
+              md: 'repeat(4, minmax(0, 1fr))' 
             }, 
-            gap: 1.5 
+            gap: { xs: 1, sm: 1.5 }
           }}>
             {players
               .filter(p => p.is_active === 0)
