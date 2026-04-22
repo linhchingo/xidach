@@ -346,19 +346,19 @@ export default function GamePage() {
 
       <Box sx={{ width: '100%' }}>
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Ván chơi</Typography>
               <Typography variant="h6" fontWeight={700}>{roundHistory.length}</Typography>
             </Paper>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Người chơi</Typography>
               <Typography variant="h6" fontWeight={700}>{activePlayers.length}</Typography>
             </Paper>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Host hiện tại</Typography>
               <Typography variant="h6" fontWeight={700} noWrap sx={{ fontSize: '0.9rem', pt: 0.5 }}>
@@ -366,7 +366,7 @@ export default function GamePage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Mỗi điểm</Typography>
               <Typography variant="h6" fontWeight={700}>{parseInt(currentGame?.money_per_point || 0).toLocaleString('vi-VN')}đ</Typography>
