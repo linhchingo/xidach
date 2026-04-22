@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -49,11 +49,21 @@ export default function GamePage() {
   const [bigWinDialogOpen, setBigWinDialogOpen] = useState(false);
   const [historyPlayer, setHistoryPlayer] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+
+  // Track scroll to show/hide sticky action bar
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowStickyBar(window.scrollY > 460);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     dispatch(fetchGame(id));
     dispatch(fetchRounds(id));
-    
+
     return () => {
       dispatch({ type: 'games/clearCurrentGame' });
       dispatch({ type: 'games/clearError' });
@@ -87,7 +97,7 @@ export default function GamePage() {
   const lastCompletedRound = [...roundHistory]
     .filter(r => r.status === 'completed')
     .sort((a, b) => b.round_number - a.round_number)[0];
-  
+
   const derivedDefaultHostId = lastCompletedRound?.host_player_id || null;
   const currentHostId = manualHostId || derivedDefaultHostId;
   const activePlayers = players.filter(p => p.is_active !== 0);
@@ -108,7 +118,7 @@ export default function GamePage() {
 
   const handleSelectResult = async (playerId, result) => {
     if (!activeRound) return;
-    
+
     // Check if clicking same result to toggle/deselect
     const currentResult = getPlayerResult(playerId);
     const resultToSubmit = currentResult === result ? null : result;
@@ -309,10 +319,10 @@ export default function GamePage() {
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 3 }, overflowX: 'hidden' }}>
       {/* Header (Sticky) */}
-      <Box sx={{ 
-        position: 'sticky', 
-        top: 0, 
-        zIndex: 1100, 
+      <Box sx={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 1100,
         bgcolor: 'background.default',
         py: { xs: 1.5, sm: 2 },
         px: { xs: 1.5, sm: 3 },
@@ -342,6 +352,133 @@ export default function GamePage() {
           variant="outlined"
           sx={{ fontWeight: 700, fontSize: '0.7rem' }}
         />
+      </Box>
+
+      {/* Sticky Action Bar - visible on scroll */}
+      <Box sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1200,
+        bgcolor: 'rgba(10, 14, 26, 0.92)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(124, 77, 255, 0.2)',
+        px: { xs: 1, sm: 2 },
+        py: 0.75,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: { xs: 0.5, sm: 1 },
+        transform: showStickyBar ? 'translateY(0)' : 'translateY(-100%)',
+        opacity: showStickyBar ? 1 : 0,
+        transition: 'transform 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease',
+        pointerEvents: showStickyBar ? 'auto' : 'none',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+      }}>
+        {activeRound ? (
+          /* ── During Round ── */
+          <>
+            <Chip
+              label={`Ván ${activeRound.round_number}`}
+              size="small"
+              sx={{ height: 32, fontSize: '0.7rem', fontWeight: 700, bgcolor: 'rgba(124, 77, 255, 0.2)', color: '#b47cff' }}
+            />
+            <Chip
+              label={`${roundResults.length}/${nonHostPlayers.length}`}
+              size="small"
+              sx={{ height: 32, fontSize: '0.7rem', fontWeight: 700, bgcolor: 'rgba(0, 230, 118, 0.15)', color: '#00e676' }}
+            />
+            <Tooltip title={!allNonHostSubmitted ? 'Kết thúc ván sớm' : 'Kết thúc ván'} placement="bottom">
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={handleEndRoundClick}
+                sx={{
+                  minWidth: 0, px: 1.5, py: 1, fontSize: '0.7rem', lineHeight: 1.2, borderRadius: '8px',
+                  ...(allNonHostSubmitted && {
+                    animation: 'heartbeat 1.5s ease-in-out infinite',
+                  }), '& .MuiButton-startIcon': { mr: '4px' }
+                }}
+                startIcon={<StopIcon sx={{ fontSize: '0.9rem !important' }} />}
+              >
+                Kết thúc ván
+              </Button>
+            </Tooltip>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setAddPlayerOpen(true)}
+              sx={{ minWidth: 0, px: 1, py: 1, fontSize: '0.7rem', lineHeight: 1.2, borderRadius: '8px', '& .MuiButton-startIcon': { mr: '4px' } }}
+              startIcon={<PersonAddIcon sx={{ fontSize: '0.9rem !important' }} />}
+            >
+              Thêm
+            </Button>
+          </>
+        ) : (
+          /* ── Outside Round ── */
+          <>
+            <Chip
+              label={`${roundHistory.length} ván`}
+              size="small"
+              sx={{ height: 32, fontSize: '0.7rem', fontWeight: 700, bgcolor: 'rgba(124, 77, 255, 0.2)', color: '#b47cff' }}
+            />
+            <Chip
+              label={`${activePlayers.length} người`}
+              size="small"
+              sx={{ height: 32, fontSize: '0.7rem', fontWeight: 700, bgcolor: 'rgba(0, 229, 255, 0.15)', color: '#00e5ff' }}
+            />
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setAddPlayerOpen(true)}
+              sx={{ minWidth: 0, px: 1, py: 1, fontSize: '0.7rem', lineHeight: 1.2, borderRadius: '8px', '& .MuiButton-startIcon': { mr: '4px' } }}
+              startIcon={<PersonAddIcon sx={{ fontSize: '0.85rem !important' }} />}
+            >
+              Thêm
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleStartRoundClick}
+              disabled={activePlayers.length < 2}
+              sx={{ minWidth: 0, px: 1, py: 1, fontSize: '0.7rem', lineHeight: 1.2, borderRadius: '8px', '& .MuiButton-startIcon': { mr: '4px' } }}
+              startIcon={<PlayArrowIcon sx={{ fontSize: '0.85rem !important' }} />}
+            >
+              Start
+            </Button>
+            <Button
+              variant="outlined"
+              color="warning"
+              size="small"
+              onClick={handleOpenChangeHost}
+              disabled={activePlayers.length < 2}
+              sx={{ minWidth: 0, px: 1, py: 1, fontSize: '0.7rem', lineHeight: 1.2, borderRadius: '8px', '& .MuiButton-startIcon': { mr: '4px' } }}
+              startIcon={<StarIcon sx={{ fontSize: '0.85rem !important' }} />}
+            >
+              Host
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              onClick={() => setEndGameConfirmOpen(true)}
+              sx={{ minWidth: 0, px: 1, py: 1, fontSize: '0.7rem', lineHeight: 1.2, borderRadius: '8px', borderStyle: 'dashed', '& .MuiButton-startIcon': { mr: '4px' } }}
+              startIcon={<FlagIcon sx={{ fontSize: '0.85rem !important' }} />}
+            >
+              End
+            </Button>
+            <Button
+              variant="text"
+              size="small"
+              onClick={() => setShowHistory(!showHistory)}
+              sx={{ minWidth: 0, px: 1, py: 1, fontSize: '0.7rem', lineHeight: 1.2, borderRadius: '8px', color: 'text.secondary', '& .MuiButton-startIcon': { mr: 0 } }}
+              startIcon={<HistoryIcon sx={{ fontSize: '0.85rem !important' }} />}
+            >
+            </Button>
+          </>
+        )}
       </Box>
 
       <Box sx={{ width: '100%' }}>
@@ -532,46 +669,46 @@ export default function GamePage() {
       <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
         Người chơi ({players.length})
       </Typography>
-      <Box sx={{ 
-        display: 'grid', 
-        gridTemplateColumns: { 
-          xs: 'repeat(2, minmax(0, 1fr))', 
-          sm: 'repeat(2, minmax(0, 1fr))', 
-          md: 'repeat(3, minmax(0, 1fr))', 
-          lg: 'repeat(4, minmax(0, 1fr))' 
-        }, 
-        gap: { xs: 1, sm: 2 }, 
+      <Box sx={{
+        display: 'grid',
+        gridTemplateColumns: {
+          xs: 'repeat(2, minmax(0, 1fr))',
+          sm: 'repeat(2, minmax(0, 1fr))',
+          md: 'repeat(3, minmax(0, 1fr))',
+          lg: 'repeat(4, minmax(0, 1fr))'
+        },
+        gap: { xs: 1, sm: 2 },
         mb: 4,
         alignItems: 'stretch'
       }}>
         {players
           .filter(p => p.is_active !== 0) // Chỉ hiện người đang chơi khi xem chính
           .map((player) => {
-          // Tính số ván đã chơi cho mỗi người chơi
-          const roundsPlayed = roundHistory.filter(r => 
-            r.status === 'completed' && 
-            (r.host_player_id === player.id || (r.results && r.results.some(res => res.player_id === player.id)))
-          ).length;
+            // Tính số ván đã chơi cho mỗi người chơi
+            const roundsPlayed = roundHistory.filter(r =>
+              r.status === 'completed' &&
+              (r.host_player_id === player.id || (r.results && r.results.some(res => res.player_id === player.id)))
+            ).length;
 
-          const isThisHost = activeRound ? player.id === hostId : player.id === currentHostId;
-          return (
-            <PlayerCard
-              key={player.id}
-              player={player}
-              isHost={isThisHost}
-              roundActive={!!activeRound}
-              currentResult={getPlayerResult(player.id)}
-              onSelectResult={handleSelectResult}
-              moneyPerPoint={currentGame.money_per_point}
-              roundsPlayed={roundsPlayed}
-              onRemove={handleRemovePlayerClick}
-              onRestore={handleRestorePlayer}
-              onHostBigWin={isThisHost ? () => setBigWinDialogOpen(true) : undefined}
-              onShowHistory={handleShowHistory}
-              hasPay={hasPay}
-            />
-          );
-        })}
+            const isThisHost = activeRound ? player.id === hostId : player.id === currentHostId;
+            return (
+              <PlayerCard
+                key={player.id}
+                player={player}
+                isHost={isThisHost}
+                roundActive={!!activeRound}
+                currentResult={getPlayerResult(player.id)}
+                onSelectResult={handleSelectResult}
+                moneyPerPoint={currentGame.money_per_point}
+                roundsPlayed={roundsPlayed}
+                onRemove={handleRemovePlayerClick}
+                onRestore={handleRestorePlayer}
+                onHostBigWin={isThisHost ? () => setBigWinDialogOpen(true) : undefined}
+                onShowHistory={handleShowHistory}
+                hasPay={hasPay}
+              />
+            );
+          })}
       </Box>
 
       {/* Inactive Players Section (if any) */}
@@ -580,20 +717,20 @@ export default function GamePage() {
           <Typography variant="subtitle1" fontWeight={600} color="text.secondary" sx={{ mb: 2 }}>
             Đã rời đi ({players.filter(p => p.is_active === 0).length})
           </Typography>
-          <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: { 
-              xs: 'repeat(2, minmax(0, 1fr))', 
-              sm: 'repeat(2, minmax(0, 1fr))', 
-              md: 'repeat(4, minmax(0, 1fr))' 
-            }, 
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: 'repeat(2, minmax(0, 1fr))',
+              sm: 'repeat(2, minmax(0, 1fr))',
+              md: 'repeat(4, minmax(0, 1fr))'
+            },
             gap: { xs: 1, sm: 1.5 }
           }}>
             {players
               .filter(p => p.is_active === 0)
               .map((player) => {
-                const roundsPlayed = roundHistory.filter(r => 
-                  r.status === 'completed' && 
+                const roundsPlayed = roundHistory.filter(r =>
+                  r.status === 'completed' &&
                   (r.host_player_id === player.id || (r.results && r.results.some(res => res.player_id === player.id)))
                 ).length;
 
@@ -604,10 +741,10 @@ export default function GamePage() {
                     isHost={false}
                     roundActive={false}
                     currentResult={null}
-                    onSelectResult={() => {}}
+                    onSelectResult={() => { }}
                     moneyPerPoint={currentGame.money_per_point}
                     roundsPlayed={roundsPlayed}
-                    onRemove={() => {}}
+                    onRemove={() => { }}
                     onRestore={handleRestorePlayer}
                     onShowHistory={handleShowHistory}
                   />
@@ -624,7 +761,7 @@ export default function GamePage() {
           <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
             <HistoryIcon /> Lịch sử các ván
           </Typography>
-          <RoundHistory rounds={roundHistory} onPlayerClick={(id, name) => handleShowHistory({id, name})} />
+          <RoundHistory rounds={roundHistory} onPlayerClick={(id, name) => handleShowHistory({ id, name })} />
         </Box>
       )}
 
