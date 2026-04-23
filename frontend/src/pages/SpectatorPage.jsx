@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Box, Button, Grid, Chip, Paper, Divider,
-  IconButton, Alert
+  IconButton, Alert, Tooltip
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import HistoryIcon from '@mui/icons-material/History';
@@ -11,6 +11,7 @@ import StarIcon from '@mui/icons-material/Star';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import StopIcon from '@mui/icons-material/Stop';
 
 import { fetchGame } from '../store/gamesSlice';
 import { fetchRounds } from '../store/roundsSlice';
@@ -30,6 +31,16 @@ export default function SpectatorPage() {
   const [showHistory, setShowHistory] = useState(false);
   const [historyPlayer, setHistoryPlayer] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+
+  // Theo dõi cuộn trang để hiển thị thanh tác vụ dính
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowStickyBar(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     dispatch(fetchGame(id));
@@ -100,6 +111,84 @@ export default function SpectatorPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 3 }, overflowX: 'hidden' }}>
+      {/* Sticky Action Bar - Hiển thị khi cuộn trang */}
+      <Box sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1200,
+        bgcolor: 'rgba(10, 14, 26, 0.92)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(0, 229, 255, 0.25)',
+        px: { xs: 1, sm: 2 },
+        py: 0.75,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: { xs: 0.5, sm: 1 },
+        transform: showStickyBar ? 'translateY(0)' : 'translateY(-100%)',
+        opacity: showStickyBar ? 1 : 0,
+        transition: 'transform 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease',
+        pointerEvents: showStickyBar ? 'auto' : 'none',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+      }}>
+        <Chip
+          label={activeRound ? `Ván ${activeRound.round_number}` : 'Đang dừng'}
+          size="small"
+          icon={activeRound ? <PlayArrowIcon style={{ fontSize: '0.9rem' }} /> : <StopIcon style={{ fontSize: '0.9rem' }} />}
+          sx={{
+            height: 32, fontSize: '0.7rem', fontWeight: 700,
+            bgcolor: activeRound ? 'rgba(124, 77, 255, 0.2)' : 'rgba(255, 82, 82, 0.15)',
+            color: activeRound ? '#b47cff' : '#ff5252'
+          }}
+        />
+        {activeRound ? (
+          <Chip
+            label={`${roundResults.length}/${nonHostPlayers.length}`}
+            size="small"
+            sx={{
+              height: 32, fontSize: '0.7rem', fontWeight: 700,
+              bgcolor: roundResults.length === nonHostPlayers.length ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 171, 64, 0.15)',
+              color: roundResults.length === nonHostPlayers.length ? '#00e676' : '#ffab40'
+            }}
+          />
+        ) : (
+          <Chip
+            label={`${activePlayers.length} người`}
+            size="small"
+            sx={{ height: 32, fontSize: '0.7rem', fontWeight: 700, bgcolor: 'rgba(0, 229, 255, 0.12)', color: '#00e5ff' }}
+          />
+        )}
+        <Chip
+          label={`${parseInt(currentGame?.money_per_point || 0).toLocaleString('vi-VN')} đ`}
+          size="small"
+          sx={{ height: 32, fontSize: '0.7rem', fontWeight: 700, bgcolor: 'rgba(255, 255, 255, 0.05)', color: 'text.secondary' }}
+        />
+        <Tooltip title="Xem lịch sử">
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => {
+              setShowHistory(!showHistory);
+              if (!showHistory) {
+                // Cuộn xuống phần lịch sử sau một khoảng trễ ngắn để UI cập nhật
+                setTimeout(() => {
+                  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, 100);
+              }
+            }}
+            sx={{
+              minWidth: 0, px: 1, py: 1, fontSize: '0.7rem', borderRadius: '8px',
+              color: showHistory ? 'primary.main' : 'text.secondary',
+              borderColor: showHistory ? 'primary.main' : 'rgba(255,255,255,0.1)'
+            }}
+            startIcon={<HistoryIcon sx={{ fontSize: '0.9rem !important', mr: -0.5 }} />}
+          >
+          </Button>
+        </Tooltip>
+      </Box>
+
       {/* Header */}
       <Box sx={{
         position: 'sticky',
