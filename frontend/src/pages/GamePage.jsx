@@ -27,6 +27,7 @@ import RoundHistory from '../components/RoundHistory';
 import BigWinDialog from '../components/BigWinDialog';
 import PlayerHistoryDialog from '../components/PlayerHistoryDialog';
 import LoadingScreen from '../components/LoadingScreen';
+import PinVerifyDialog from '../components/PinVerifyDialog';
 import NotFoundPage from './NotFoundPage';
 
 export default function GamePage() {
@@ -50,6 +51,8 @@ export default function GamePage() {
   const [historyPlayer, setHistoryPlayer] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
+  const [pinVerified, setPinVerified] = useState(false);
+  const [pinCheckReady, setPinCheckReady] = useState(false);
 
   // Track scroll to show/hide sticky action bar
   useEffect(() => {
@@ -304,6 +307,16 @@ export default function GamePage() {
 
   const isCorrectGameLoaded = currentGame && String(currentGame.id) === String(id);
 
+  // PIN guard: check localStorage once game data is loaded
+  useEffect(() => {
+    if (!isCorrectGameLoaded) return;
+    const savedPin = localStorage.getItem(`game_pin_${id}`);
+    if (savedPin) {
+      setPinVerified(true);
+    }
+    setPinCheckReady(true);
+  }, [isCorrectGameLoaded, id]);
+
   if (error) {
     return <NotFoundPage />;
   }
@@ -314,6 +327,20 @@ export default function GamePage() {
 
   if (currentGame && String(currentGame.id) === String(id) && currentGame.status === 'completed') {
     return null;
+  }
+
+  // Show PIN dialog if not verified
+  if (pinCheckReady && !pinVerified) {
+    return (
+      <Container maxWidth="sm" sx={{ py: 8, textAlign: 'center' }}>
+        <PinVerifyDialog
+          open={true}
+          onClose={() => navigate('/')}
+          gameId={parseInt(id)}
+          onVerified={() => setPinVerified(true)}
+        />
+      </Container>
+    );
   }
 
   return (

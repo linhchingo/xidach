@@ -22,6 +22,8 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { useLocation } from 'react-router-dom';
 import CreateGameDialog from '../components/CreateGameDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
+import RoleSelectDialog from '../components/RoleSelectDialog';
+import PinVerifyDialog from '../components/PinVerifyDialog';
 import LoadingScreen from '../components/LoadingScreen';
 import { fetchGames, setFilters, deleteGame } from '../store/gamesSlice';
 
@@ -33,6 +35,9 @@ export default function HomePage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [gameToDelete, setGameToDelete] = useState(null);
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [pinDialogOpen, setPinDialogOpen] = useState(false);
   const location = useLocation();
 
   // Load games on mount
@@ -100,10 +105,38 @@ export default function HomePage() {
     setGameToDelete(null);
   };
 
-  const handleGameClick = (id, status) => {
+  const handleGameClick = (game) => {
     // Save scroll position before navigating away
     sessionStorage.setItem('homeScrollPos', window.scrollY.toString());
-    navigate(status === 'completed' ? `/result/${id}` : `/game/${id}`);
+    if (game.status === 'completed') {
+      navigate(`/result/${game.id}`);
+    } else {
+      setSelectedGame(game);
+      setRoleDialogOpen(true);
+    }
+  };
+
+  const handleRoleSelect = (role) => {
+    setRoleDialogOpen(false);
+    if (!selectedGame) return;
+    if (role === 'view') {
+      navigate(`/game/${selectedGame.id}?role=view`);
+    } else {
+      // Check if PIN is already saved in localStorage
+      const savedPin = localStorage.getItem(`game_pin_${selectedGame.id}`);
+      if (savedPin) {
+        navigate(`/game/${selectedGame.id}`);
+      } else {
+        setPinDialogOpen(true);
+      }
+    }
+  };
+
+  const handlePinVerified = () => {
+    setPinDialogOpen(false);
+    if (selectedGame) {
+      navigate(`/game/${selectedGame.id}`);
+    }
   };
 
   if (loading) return <LoadingScreen />;
@@ -260,7 +293,7 @@ export default function HomePage() {
               }}
             >
               <CardActionArea
-                onClick={() => handleGameClick(game.id, game.status)}
+                onClick={() => handleGameClick(game)}
                 sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
               >
                   <CardContent sx={{ p: 2.5, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
@@ -352,6 +385,20 @@ export default function HomePage() {
         title="Xoá cuộc chơi"
         message="Bạn có chắc chắn muốn xoá cuộc chơi này và toàn bộ dữ liệu liên quan? Hành động này không thể hoàn tác."
         confirmText="Xoá vĩnh viễn"
+      />
+
+      <RoleSelectDialog
+        open={roleDialogOpen}
+        onClose={() => setRoleDialogOpen(false)}
+        game={selectedGame}
+        onSelectRole={handleRoleSelect}
+      />
+
+      <PinVerifyDialog
+        open={pinDialogOpen}
+        onClose={() => setPinDialogOpen(false)}
+        gameId={selectedGame?.id}
+        onVerified={handlePinVerified}
       />
     </Container>
   );

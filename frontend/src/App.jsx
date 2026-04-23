@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBrowserRouter, RouterProvider, ScrollRestoration, Outlet } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, ScrollRestoration, Outlet, useSearchParams } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -10,6 +10,13 @@ import GamePage from './pages/GamePage';
 import GameResultPage from './pages/GameResultPage';
 import HistoryPage from './pages/HistoryPage';
 import NotFoundPage from './pages/NotFoundPage';
+import SpectatorPage from './pages/SpectatorPage';
+
+// Wrapper that routes to Spectator or Manager based on ?role=view
+function GameRouter() {
+  const [searchParams] = useSearchParams();
+  return searchParams.get('role') === 'view' ? <SpectatorPage /> : <GamePage />;
+}
 
 const router = createBrowserRouter([
   {
@@ -27,7 +34,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/game/:id",
-        element: <GamePage />,
+        element: <GameRouter />,
       },
       {
         path: "/result/:id",

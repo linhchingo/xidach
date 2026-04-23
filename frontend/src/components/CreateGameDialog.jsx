@@ -4,6 +4,7 @@ import {
   Button, TextField, InputAdornment, Box
 } from '@mui/material';
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
+import PinInput from './PinInput';
 import { useDispatch } from 'react-redux';
 import { createGame } from '../store/gamesSlice';
 import { toast } from 'react-toastify';
@@ -17,6 +18,8 @@ export default function CreateGameDialog({ open, onClose }) {
   const [name, setName] = useState('');
   const [gameDate, setGameDate] = useState(new Date().toISOString().split('T')[0]);
   const [moneyPerPoint, setMoneyPerPoint] = useState('1000');
+  const [managerPin, setManagerPin] = useState('');
+  const [pinError, setPinError] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Lock/unlock body scroll when dialog opens/closes
@@ -44,6 +47,12 @@ export default function CreateGameDialog({ open, onClose }) {
       toast.error('Số tiền mỗi điểm phải lớn hơn 0');
       return;
     }
+    if (managerPin.length !== 6) {
+      setPinError(true);
+      toast.error('Mật khẩu quản lý phải đúng 6 chữ số');
+      return;
+    }
+    setPinError(false);
 
     setLoading(true);
     try {
@@ -51,11 +60,15 @@ export default function CreateGameDialog({ open, onClose }) {
         name: name.trim(),
         game_date: gameDate,
         money_per_point: parseInt(moneyPerPoint),
+        manager_pin: managerPin,
       })).unwrap();
+      // Save PIN to localStorage so creator is auto-authenticated as Manager
+      localStorage.setItem(`game_pin_${result.id}`, managerPin);
       toast.success(`Đã tạo cuộc chơi "${result.name}"`);
       onClose();
       setName('');
       setMoneyPerPoint('1000');
+      setManagerPin('');
       navigate(`/game/${result.id}`);
     } catch (err) {
       toast.error(err.error || 'Lỗi tạo cuộc chơi');
@@ -124,6 +137,13 @@ export default function CreateGameDialog({ open, onClose }) {
                 },
                 htmlInput: { min: 1 },
               }}
+            />
+            <PinInput
+              label="Mật khẩu quản lý (6 số) *"
+              value={managerPin}
+              onChange={setManagerPin}
+              error={pinError}
+              errorText={pinError ? 'Vui lòng nhập đủ 6 chữ số' : ''}
             />
           </Box>
         </DialogContent>

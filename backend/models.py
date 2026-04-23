@@ -23,6 +23,7 @@ def init_db():
             name TEXT NOT NULL,
             game_date TEXT NOT NULL,
             money_per_point INTEGER NOT NULL DEFAULT 1000,
+            manager_pin TEXT,
             status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'completed')),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(name, game_date)
@@ -63,6 +64,14 @@ def init_db():
     ''')
 
     conn.commit()
+
+    # Migration: add manager_pin column to existing databases
+    try:
+        conn.execute('ALTER TABLE games ADD COLUMN manager_pin TEXT')
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+
     conn.close()
 
 

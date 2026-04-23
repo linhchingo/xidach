@@ -1,3 +1,4 @@
+import re
 from flask import Blueprint, request, jsonify
 from models import get_db, dict_from_row, dicts_from_rows
 
@@ -15,6 +16,7 @@ def create_game():
     name = data.get('name', '').strip()
     game_date = data.get('game_date', '').strip()
     money_per_point = data.get('money_per_point')
+    manager_pin = data.get('manager_pin', '').strip()
 
     if not name:
         return jsonify({'error': 'Tên cuộc chơi không được để trống'}), 400
@@ -22,15 +24,20 @@ def create_game():
         return jsonify({'error': 'Ngày chơi không được để trống'}), 400
     if not money_per_point or int(money_per_point) <= 0:
         return jsonify({'error': 'Số tiền mỗi điểm phải lớn hơn 0'}), 400
+    if not manager_pin or not re.match(r'^\d{6}$', manager_pin):
+        return jsonify({'error': 'Mật khẩu quản lý phải đúng 6 chữ số'}), 400
 
     db = get_db()
     try:
         cursor = db.execute(
-            'INSERT INTO games (name, game_date, money_per_point) VALUES (?, ?, ?)',
-            (name, game_date, int(money_per_point))
+            'INSERT INTO games (name, game_date, money_per_point, manager_pin) VALUES (?, ?, ?, ?)',
+            (name, game_date, int(money_per_point), manager_pin)
         )
         db.commit()
         game = dict_from_row(db.execute('SELECT * FROM games WHERE id = ?', (cursor.lastrowid,)).fetchone())
+        # Don't expose PIN in response
+        game.pop('manager_pin', None)
+        game['has_pin'] = True
         return jsonify(game), 201
     except Exception as e:
         if 'UNIQUE constraint' in str(e):
@@ -65,6 +72,9 @@ def get_games():
             ).fetchone()['count']
             game['player_count'] = player_count
             game['round_count'] = round_count
+            # Don't expose PIN, add has_pin flag
+            game['has_pin'] = game.get('manager_pin') is not None
+            game.pop('manager_pin', None)
 
         return jsonify(games), 200
     finally:
@@ -111,7 +121,35 @@ def get_game(game_id):
         game['players'] = players
         game['rounds'] = rounds
 
+        # Don't expose PIN in response, add has_pin flag
+        game['has_pin'] = game.get('manager_pin') is not None
+        game.pop('manager_pin', None)
+
         return jsonify(game), 200
+    finally:
+        db.close()
+
+
+@games_bp.route('/api/games/<int:game_id>/verify-pin', methods=['POST'])
+def verify_pin(game_id):
+    """Verify manager PIN for a game."""
+    data = request.get_json()
+    if not data or not data.get('pin'):
+        return jsonify({'error': 'PIN is required'}), 400
+
+    pin = data['pin'].strip()
+    db = get_db()
+    try:
+        game = dict_from_row(db.execute('SELECT manager_pin FROM games WHERE id = ?', (game_id,)).fetchone())
+        if not game:
+            return jsonify({'error': 'Cuộc chơi không tồn tại'}), 404
+
+        stored_pin = game.get('manager_pin')
+        if stored_pin is None:
+            # Old game without PIN — only Master PIN can access (handled client-side)
+            return jsonify({'valid': False}), 200
+
+        return jsonify({'valid': pin == stored_pin}), 200
     finally:
         db.close()
 
