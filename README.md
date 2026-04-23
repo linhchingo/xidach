@@ -61,7 +61,12 @@ npm run dev
 ```
 
 ## 🌟 Tính Năng Chính
-- **Quản lý ván đấu**: Thêm bàn chơi, bắt đầu ghi nhận điểm số từng ván.
-- **Quản lý người chơi**: Thêm/sửa người chơi tham gia vào các bàn đánh Xì Dách.
-- **Tính toán kết quả**: Tự động tổng hợp điểm cho từng ván dựa trên kết quả Thắng/Thua.
-- **Kiến trúc bảo mật**: Database được cấu hình Docker volume persist nên không sợ mất khi restart container, không expose port backend trực tiếp ra ngoài.
+- **Quản lý ván đấu**: Thêm bàn chơi, bắt đầu ghi nhận điểm số từng ván. Tự động bắt đầu vòng đấu và xử lý các kết quả còn thiếu.
+- **Quản lý người chơi**: Thêm/sửa người chơi tham gia vào các bàn đánh Xì Dách. Hỗ trợ thay đổi nhà cái (Host) giữa ván đấu.
+- **Tính toán kết quả**: Tự động tổng hợp điểm cho từng ván dựa trên kết quả Thắng/Thua và hệ số nhân điểm (như x2).
+- **Phân quyền truy cập (RBAC)**: Phân biệt vai trò Quản lý (Manager) có bảo mật bằng mã PIN và Người xem (Spectator) với giao diện theo dõi diễn biến trận đấu thời gian thực (Read-only).
+- **Giao diện hiện đại & Tối ưu Di động (Mobile-friendly)**: 
+  - UI hỗ trợ Sticky Action Bar giúp thao tác nhanh.
+  - Thẻ người chơi (Player Cards) được thiết kế tối ưu không gian dọc với viền màu động và các huy hiệu ComicText bắt mắt.
+  - Hỗ trợ tốt trên trình duyệt di động, ngăn chặn lỗi bàn phím ảo che lấp giao diện.
+- **Kiến trúc ổn định, bảo mật**: Database được cấu hình Docker volume persist để lưu trữ an toàn. Kiến trúc Monorepo frontend-backend dễ dàng vận hành với Nginx reverse proxy.
