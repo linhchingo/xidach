@@ -2,25 +2,24 @@ import React from 'react';
 import {
   Card, CardContent, Typography, Box, Avatar, Chip
 } from '@mui/material';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import HandshakeIcon from '@mui/icons-material/Handshake';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
-import ThumbDownIcon from '@mui/icons-material/ThumbDown';
-import PaymentIcon from '@mui/icons-material/Payment';
-import BoltIcon from '@mui/icons-material/Bolt';
+import ComicText from './ComicText';
 
-const resultConfig = {
-  win: { label: 'Thắng', color: 'success', icon: <EmojiEventsIcon fontSize="small" /> },
-  win_big: { label: 'Thắng x2', color: 'warning', icon: <BoltIcon fontSize="small" /> },
-  draw: { label: 'Hoà', color: 'default', icon: <HandshakeIcon fontSize="small" /> },
-  lose: { label: 'Thua', color: 'error', icon: <ThumbDownIcon fontSize="small" /> },
-  lose_big: { label: 'Thua x2', color: 'error', icon: <BoltIcon fontSize="small" /> },
-  pay: { label: 'Đền', color: 'info', icon: <PaymentIcon fontSize="small" /> },
-};
-
-const resultBadgeStyle = {
-  win_big: { bgcolor: 'rgba(255,171,64,0.15)', color: '#ffab40', border: '1px solid rgba(255,171,64,0.4)' },
-  lose_big: { bgcolor: 'rgba(255,82,82,0.15)', color: '#ff5252', border: '1px solid rgba(255,82,82,0.4)' },
+/**
+ * Comic text config for each result type.
+ * - label: text displayed in comic style
+ * - color: main fill color of the comic text
+ * - dotColor: halftone dot overlay color
+ * - rotate: CSS rotation for "street" feel
+ * - opacity: how visible the text is (x2 results are more prominent)
+ */
+const comicResultConfig = {
+  win: { label: 'Win!', color: '#4CAF50', dotColor: '#2E7D32', rotate: '-8deg', opacity: 0.7 },
+  win_big: { label: 'Win x2!', color: '#FACC15', dotColor: '#EF4444', rotate: '-8deg', opacity: 1 },
+  draw: { label: 'Draw', color: '#9E9E9E', dotColor: '#616161', rotate: '-8deg', opacity: 0.5 },
+  lose: { label: 'Lose!', color: '#ff5252', dotColor: '#B71C1C', rotate: '-8deg', opacity: 0.7 },
+  lose_big: { label: 'Lose x2!', color: '#ff1744', dotColor: '#880E4F', rotate: '-8deg', opacity: 1 },
+  pay: { label: 'Pay!', color: '#CE93D8', dotColor: '#7B1FA2', rotate: '-8deg', opacity: 1 },
 };
 
 /**
@@ -39,24 +38,7 @@ export default function SpectatorPlayerCard({
   const money = Math.abs(points) * (moneyPerPoint || 0);
   const isActive = player.is_active !== 0;
 
-  const renderBadge = () => {
-    if (!currentResult) return null;
-    const cfg = resultConfig[currentResult];
-    if (!cfg) return null;
-    const extraStyle = resultBadgeStyle[currentResult] || {};
-    return (
-      <Chip
-        icon={React.cloneElement(cfg.icon, { sx: { fontSize: '0.85rem !important' } })}
-        label={cfg.label}
-        size="small"
-        sx={{
-          fontWeight: 700, height: 22, fontSize: '0.7rem',
-          ...extraStyle
-        }}
-        color={extraStyle.color ? undefined : cfg.color}
-      />
-    );
-  };
+  const comicCfg = currentResult ? comicResultConfig[currentResult] : null;
 
   return (
     <Card
@@ -107,6 +89,33 @@ export default function SpectatorPlayerCard({
         />
       )}
 
+      {/* Comic text result overlay — centered in card, behind content z-index */}
+      {comicCfg && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: `translate(-50%, -50%) rotate(${comicCfg.rotate})`,
+            zIndex: 1,
+            pointerEvents: 'none',
+            opacity: comicCfg.opacity,
+            transition: 'opacity 0.3s ease',
+          }}
+        >
+          <ComicText
+            fontSize={3}
+            color={comicCfg.color}
+            dotColor={comicCfg.dotColor}
+            sx={{
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {comicCfg.label}
+          </ComicText>
+        </Box>
+      )}
+
       <CardContent sx={{
         p: { xs: 1, sm: 1.5 },
         flexGrow: 1,
@@ -115,6 +124,8 @@ export default function SpectatorPlayerCard({
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 1,
+        position: 'relative',
+        zIndex: 2,
         '&:last-child': {
           pb: { xs: 1, sm: 1.5 }
         }
@@ -167,21 +178,18 @@ export default function SpectatorPlayerCard({
           </Box>
         </Box>
 
-        {/* Right side: Points + Badge */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right', gap: 0.5, flexShrink: 0 }}>
-          <Box>
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', lineHeight: 1.2 }}>
-              Điểm: {points > 0 ? '+' : ''}{points}đ
+        {/* Right side: Points only (badge replaced by comic text overlay) */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right', flexShrink: 0 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', lineHeight: 1.2 }}>
+            Điểm: {points > 0 ? '+' : ''}{points}đ
+          </Typography>
+          {points !== 0 && (
+            <Typography variant="caption" fontWeight={700}
+              sx={{ color: points > 0 ? '#00e676' : '#ff5252', fontSize: '0.7rem', display: 'block', lineHeight: 1.2 }}
+            >
+              {points > 0 ? '+' : '-'}{money.toLocaleString('vi-VN')} VNĐ
             </Typography>
-            {points !== 0 && (
-              <Typography variant="caption" fontWeight={700}
-                sx={{ color: points > 0 ? '#00e676' : '#ff5252', fontSize: '0.7rem', display: 'block', lineHeight: 1.2 }}
-              >
-                {points > 0 ? '+' : '-'}{money.toLocaleString('vi-VN')} VNĐ
-              </Typography>
-            )}
-          </Box>
-          {renderBadge()}
+          )}
         </Box>
       </CardContent>
     </Card>
