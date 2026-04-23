@@ -65,17 +65,35 @@ export default function SpectatorPlayerCard({
         display: 'flex', flexDirection: 'column',
         position: 'relative', overflow: 'visible',
         bgcolor: isActive
-          ? (isHost ? 'rgba(255,171,64,0.05)' : 'background.paper')
+          ? (currentResult
+            ? (currentResult === 'win' || currentResult === 'win_big' ? 'rgba(76, 175, 80, 0.04)' :
+              currentResult === 'lose' || currentResult === 'lose_big' ? 'rgba(255, 82, 82, 0.04)' :
+                currentResult === 'pay' ? 'rgba(208, 33, 243, 0.04)' : 'background.paper')
+            : (isHost ? 'rgba(255,171,64,0.05)' : 'background.paper'))
           : 'rgba(0,0,0,0.1)',
-        border: isHost
-          ? '1px solid rgba(255,171,64,0.3)'
-          : '1px solid rgba(255,255,255,0.06)',
+        border: currentResult
+          ? (currentResult === 'win' ? '1px solid rgba(76, 175, 80, 0.5)' :
+            currentResult === 'win_big' ? '1px solid rgba(255, 171, 64, 0.7)' :
+              currentResult === 'draw' ? '1px solid rgba(158, 158, 158, 0.4)' :
+                currentResult === 'lose' ? '1px solid rgba(255, 82, 82, 0.5)' :
+                  currentResult === 'lose_big' ? '1px solid rgba(255, 82, 82, 0.8)' :
+                    currentResult === 'pay' ? '1px solid rgba(208, 33, 243, 0.5)' : '1px solid rgba(255,255,255,0.06)')
+          : (isHost
+            ? '1px solid rgba(255,171,64,0.3)'
+            : '1px solid rgba(255,255,255,0.06)'),
+        boxShadow: currentResult ? (
+          currentResult.includes('win') ? '0 0 10px rgba(76, 175, 80, 0.15)' :
+            currentResult.includes('lose') ? '0 0 10px rgba(255, 82, 82, 0.15)' : 'none'
+        ) : 'none',
         transition: 'all 0.3s ease',
         opacity: isActive ? 1 : 0.6,
         filter: isActive ? 'none' : 'grayscale(0.5)',
         '&:hover': isActive ? {
           transform: 'translateY(-4px)',
-          boxShadow: '0 8px 25px rgba(0,0,0,0.2)',
+          boxShadow: currentResult ? (
+            currentResult.includes('win') ? '0 8px 25px rgba(76, 175, 80, 0.25)' :
+              currentResult.includes('lose') ? '0 8px 25px rgba(255, 82, 82, 0.25)' : '0 8px 25px rgba(0,0,0,0.2)'
+          ) : '0 8px 25px rgba(0,0,0,0.2)',
         } : {}
       }}
     >
