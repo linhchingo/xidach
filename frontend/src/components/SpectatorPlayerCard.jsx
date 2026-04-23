@@ -45,18 +45,16 @@ export default function SpectatorPlayerCard({
     if (!cfg) return null;
     const extraStyle = resultBadgeStyle[currentResult] || {};
     return (
-      <Box sx={{ mt: 'auto' }}>
-        <Chip
-          icon={React.cloneElement(cfg.icon, { sx: { fontSize: '0.85rem !important' } })}
-          label={cfg.label}
-          size="small"
-          sx={{
-            fontWeight: 700, height: 22, fontSize: '0.7rem',
-            ...extraStyle
-          }}
-          color={extraStyle.color ? undefined : cfg.color}
-        />
-      </Box>
+      <Chip
+        icon={React.cloneElement(cfg.icon, { sx: { fontSize: '0.85rem !important' } })}
+        label={cfg.label}
+        size="small"
+        sx={{
+          fontWeight: 700, height: 22, fontSize: '0.7rem',
+          ...extraStyle
+        }}
+        color={extraStyle.color ? undefined : cfg.color}
+      />
     );
   };
 
@@ -87,29 +85,41 @@ export default function SpectatorPlayerCard({
           label="HOST"
           size="small"
           color="warning"
-          sx={{ position: 'absolute', top: -10, right: 15, fontWeight: 800, fontSize: '0.6rem', height: 18, zIndex: 3 }}
+          sx={{ position: 'absolute', top: -10, right: "50%", fontWeight: 800, fontSize: '0.6rem', height: 18, zIndex: 3, transform: "translateX(50%)" }}
         />
       )}
 
-      <CardContent sx={{ p: { xs: 1.5, sm: 2 }, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* Avatar + Name — clickable for history */}
+      <CardContent sx={{
+        p: { xs: 1, sm: 1.5 },
+        flexGrow: 1,
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 1,
+        '&:last-child': {
+          pb: { xs: 1, sm: 1.5 }
+        }
+      }}>
+        {/* Left side: Avatar + Name — clickable for history */}
         <Box
           onClick={() => onShowHistory && onShowHistory(player)}
           sx={{
             display: 'flex',
             alignItems: 'center',
             gap: { xs: 1, sm: 1.5 },
-            mb: 1,
             position: 'relative',
             cursor: 'pointer',
             transition: 'opacity 0.2s',
-            '&:hover': { opacity: 0.8 }
+            '&:hover': { opacity: 0.8 },
+            flex: 1,
+            minWidth: 0
           }}
         >
           {isHost && isActive && (
             <WorkspacePremiumIcon sx={{
-              position: 'absolute', top: -18, left: -2,
-              color: '#FFD700', fontSize: { xs: '1.2rem', sm: '1.6rem' },
+              position: 'absolute', top: -14, left: -4,
+              color: '#FFD700', fontSize: { xs: '1.2rem', sm: '1.4rem' },
               filter: 'drop-shadow(0 0 4px rgba(255,215,0,0.6))',
               zIndex: 2, transform: 'rotate(-10deg)'
             }} />
@@ -123,7 +133,7 @@ export default function SpectatorPlayerCard({
           >
             {player.name.charAt(0).toUpperCase()}
           </Avatar>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box sx={{ minWidth: 0 }}>
             <Typography
               variant="subtitle2" fontWeight={700} noWrap
               sx={{
@@ -139,24 +149,22 @@ export default function SpectatorPlayerCard({
           </Box>
         </Box>
 
-        {/* Points */}
-        <Box sx={{ mb: 1 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
-            Điểm: {points > 0 ? '+' : ''}{points}đ
-          </Typography>
-          {points !== 0 && (
-            <Typography variant="caption" fontWeight={700}
-              sx={{ color: points > 0 ? '#00e676' : '#ff5252', fontSize: '0.7rem', display: 'block' }}
-            >
-              {points > 0 ? '+' : '-'}{money.toLocaleString('vi-VN')} VNĐ
+        {/* Right side: Points + Badge */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right', gap: 0.5, flexShrink: 0 }}>
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', lineHeight: 1.2 }}>
+              Điểm: {points > 0 ? '+' : ''}{points}đ
             </Typography>
-          )}
+            {points !== 0 && (
+              <Typography variant="caption" fontWeight={700}
+                sx={{ color: points > 0 ? '#00e676' : '#ff5252', fontSize: '0.7rem', display: 'block', lineHeight: 1.2 }}
+              >
+                {points > 0 ? '+' : '-'}{money.toLocaleString('vi-VN')} VNĐ
+              </Typography>
+            )}
+          </Box>
+          {renderBadge()}
         </Box>
-
-        {/* Current result badge */}
-        {renderBadge()}
-
-        {/* NO action buttons — this is read-only */}
       </CardContent>
     </Card>
   );
