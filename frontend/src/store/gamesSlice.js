@@ -92,12 +92,17 @@ const gamesSlice = createSlice({
       state.filters = { ...state.filters, ...action.payload };
     },
     syncGameState: (state, action) => {
-      // Nhận data full từ server (game, players, roundHistory)
+      // Nhận data full từ server (game, players, active_round, roundHistory)
       const data = action.payload;
+      const allRounds = [...data.round_history];
+      if (data.active_round) {
+        allRounds.push(data.active_round);
+      }
+      
       state.currentGame = {
         ...data.game,
         players: data.players,
-        rounds: data.round_history, // Chỉ cập nhật state cũ nếu cần thiết, vì hiện tại ta lấy roundHistory từ roundsSlice
+        rounds: allRounds,
       };
       state.loading = false;
       state.error = null;

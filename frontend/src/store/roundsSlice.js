@@ -129,6 +129,12 @@ const roundsSlice = createSlice({
             r => r.player_id !== action.payload.playerId
           );
         }
+      })
+      // socket event: syncGameState (from gamesSlice)
+      .addCase('games/syncGameState', (state, action) => {
+        const data = action.payload;
+        state.activeRound = data.active_round || null;
+        state.roundHistory = data.round_history || [];
       });
   },
 });
