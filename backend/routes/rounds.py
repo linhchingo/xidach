@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import get_db, dict_from_row, dicts_from_rows
 from extensions import socketio
-from redis_cache import refresh_game_cache
+from redis_cache import refresh_game_cache, get_redis, get_cached_game_state, cache_game_state
 
 rounds_bp = Blueprint('rounds', __name__)
 
@@ -63,6 +63,11 @@ def start_round(game_id):
         rnd['results'] = []
 
         refresh_game_cache(game_id)
+        
+        # Cache round_id -> game_id mapping for fast lookups in submit_result
+        r = get_redis()
+        r.hset('active_rounds_map', rnd['id'], game_id)
+        
         socketio.emit('round_started', rnd, room=f'game:{game_id}')
 
         return jsonify(rnd), 201
@@ -85,77 +90,97 @@ def submit_result(round_id):
     if result and result not in ('win', 'draw', 'lose', 'pay', 'win_big', 'lose_big'):
         return jsonify({'error': 'Kết quả phải là win, draw, lose, pay, win_big hoặc lose_big'}), 400
 
-    db = get_db()
-    try:
-        # Check round exists and is active
-        rnd = dict_from_row(db.execute('SELECT * FROM rounds WHERE id = ?', (round_id,)).fetchone())
-        if not rnd:
-            return jsonify({'error': 'Ván chơi không tồn tại'}), 404
-        if rnd['status'] != 'active':
-            return jsonify({'error': 'Ván chơi đã kết thúc hoặc bị huỷ'}), 400
-
-        # Check player is in this game, not the host, and IS ACTIVE
-        player = dict_from_row(
-            db.execute('SELECT * FROM players WHERE id = ? AND game_id = ? AND is_active = 1', (player_id, rnd['game_id'])).fetchone()
-        )
-        if not player:
-            return jsonify({'error': 'Người chơi không tồn tại hoặc đã bị loại khỏi cuộc chơi'}), 404
-        if player_id == rnd['host_player_id']:
-            return jsonify({'error': 'Host không cần chọn kết quả'}), 400
-
-        if not result:
-            # Delete selection
-            db.execute('DELETE FROM round_results WHERE round_id = ? AND player_id = ?', (round_id, player_id))
-        else:
-            # Calculate points change (will be finalized when round ends)
-            points_change = 0
-            if result == 'win':
-                points_change = 1
-            elif result == 'lose':
-                points_change = -1
-            elif result == 'draw':
-                points_change = 0
-            elif result == 'win_big':
-                points_change = 2
-            elif result == 'lose_big':
-                points_change = -2
-            # 'pay' points will be calculated when round ends
-
-            # Upsert the result
-            existing = db.execute(
-                'SELECT id FROM round_results WHERE round_id = ? AND player_id = ?', (round_id, player_id)
-            ).fetchone()
-
-            if existing:
-                db.execute(
-                    'UPDATE round_results SET result = ?, points_change = ? WHERE round_id = ? AND player_id = ?',
-                    (result, points_change, round_id, player_id)
-                )
+    r = get_redis()
+    
+    # Try to validate using Redis first
+    game_id = r.hget('active_rounds_map', round_id)
+    rnd = None
+    player = None
+    
+    if game_id:
+        game_id = int(game_id)
+        state = get_cached_game_state(game_id)
+        if state and state.get('active_round') and state['active_round']['id'] == round_id:
+            rnd = state['active_round']
+            # Check player in cache
+            player = next((p for p in state['players'] if p['id'] == player_id and p['is_active']), None)
+            
+            if player:
+                if player_id == rnd['host_player_id']:
+                    return jsonify({'error': 'Host không cần chọn kết quả'}), 400
             else:
-                db.execute(
-                    'INSERT INTO round_results (round_id, player_id, result, points_change) VALUES (?, ?, ?, ?)',
-                    (round_id, player_id, result, points_change)
+                # Player not in cache or inactive, might be stale cache, fall back to DB or return error
+                player = None 
+
+    db = None
+    if not rnd or not player:
+        # Fallback to DB if Redis check fails or is incomplete
+        db = get_db()
+        try:
+            if not rnd:
+                rnd = dict_from_row(db.execute('SELECT * FROM rounds WHERE id = ?', (round_id,)).fetchone())
+                if not rnd:
+                    return jsonify({'error': 'Ván chơi không tồn tại'}), 404
+                if rnd['status'] != 'active':
+                    return jsonify({'error': 'Ván chơi đã kết thúc hoặc bị huỷ'}), 400
+                game_id = rnd['game_id']
+                r.hset('active_rounds_map', rnd['id'], game_id)
+
+            if not player:
+                player = dict_from_row(
+                    db.execute('SELECT * FROM players WHERE id = ? AND game_id = ? AND is_active = 1', (player_id, game_id)).fetchone()
                 )
+                if not player:
+                    return jsonify({'error': 'Người chơi không tồn tại hoặc đã bị loại khỏi cuộc chơi'}), 404
+                if player_id == rnd['host_player_id']:
+                    return jsonify({'error': 'Host không cần chọn kết quả'}), 400
+        finally:
+            if db: db.close()
 
-        db.commit()
+    try:
+        redis_key = f'round:{round_id}:results'
+        
+        if not result:
+            r.hdel(redis_key, player_id)
+        else:
+            r.hset(redis_key, player_id, result)
 
-        # Return updated results for this round
-        results = dicts_from_rows(
-            db.execute(
-                '''SELECT rr.*, p.name as player_name 
-                   FROM round_results rr 
-                   JOIN players p ON rr.player_id = p.id 
-                   WHERE rr.round_id = ?''',
-                (round_id,)
-            ).fetchall()
-        )
+        # Get all results for this round from Redis
+        redis_results = r.hgetall(redis_key)
+        
+        # Get cached game state to get player names quickly
+        state = get_cached_game_state(rnd['game_id'])
+        if not state:
+            # Fallback if cache missing
+            from socket_events import build_game_state
+            state = build_game_state(rnd['game_id'])
+            if state:
+                cache_game_state(rnd['game_id'], state)
+        
+        players_map = {p['id']: p['name'] for p in state['players']} if state else {}
+        
+        results = []
+        for pid_str, res in redis_results.items():
+            pid = int(pid_str)
+            results.append({
+                'player_id': pid,
+                'result': res,
+                'player_name': players_map.get(pid, 'Unknown'),
+                'round_id': round_id,
+                'points_change': 0 # Not finalized yet
+            })
 
-        refresh_game_cache(rnd['game_id'])
+        # Update cache inline (Scalpel approach)
+        if state and state.get('active_round') and state['active_round']['id'] == round_id:
+            state['active_round']['results'] = results
+            cache_game_state(rnd['game_id'], state)
+
         socketio.emit('result_submitted', {'results': results, 'player_id': player_id}, room=f'game:{rnd["game_id"]}')
 
         return jsonify({'results': results}), 200
     finally:
-        db.close()
+        if db:
+            db.close()
 
 
 @rounds_bp.route('/api/rounds/<int:round_id>/end', methods=['PUT'])
@@ -186,15 +211,15 @@ def end_round(round_id):
         )
         non_host_players = [p for p in all_players if p['id'] != host_player_id]
 
-        # Get results but only for players who are STILL ACTIVE
-        results = dicts_from_rows(
-            db.execute('''
-                SELECT rr.* 
-                FROM round_results rr
-                JOIN players p ON rr.player_id = p.id
-                WHERE rr.round_id = ? AND p.is_active = 1
-            ''', (round_id,)).fetchall()
-        )
+        r = get_redis()
+        redis_key = f'round:{round_id}:results'
+        redis_data = r.hgetall(redis_key)
+        
+        # Convert redis data to the format the logic expects
+        results = []
+        for pid_str, res in redis_data.items():
+            results.append({'player_id': int(pid_str), 'result': res})
+            
         submitted_player_ids = {r['player_id'] for r in results}
         # If someone chose 'pay', round can end immediately (pay takes priority)
         has_pay = any(r['result'] == 'pay' for r in results)
@@ -207,24 +232,10 @@ def end_round(round_id):
                     return jsonify({
                         'error': f'Các người chơi chưa chọn kết quả: {", ".join(missing_names)}'
                     }), 400
-                # Auto-assign 'lose' for players in default_losers who haven't submitted
+                # Auto-assign 'lose' for missing players
                 for pid in default_losers:
                     if pid in missing_ids:
-                        db.execute(
-                            '''INSERT INTO round_results (round_id, player_id, result, points_change)
-                               VALUES (?, ?, ?, ?)''',
-                            (round_id, pid, 'lose', -1)
-                        )
-                db.commit()
-                # Re-fetch results after insertion
-                results = dicts_from_rows(
-                    db.execute('''
-                        SELECT rr.*
-                        FROM round_results rr
-                        JOIN players p ON rr.player_id = p.id
-                        WHERE rr.round_id = ? AND p.is_active = 1
-                    ''', (round_id,)).fetchall()
-                )
+                        results.append({'player_id': pid, 'result': 'lose'})
                 submitted_player_ids = {r['player_id'] for r in results}
 
         # Build a points_change map for ALL players (including host)
@@ -296,6 +307,11 @@ def end_round(round_id):
 
         # Mark round as completed
         db.execute('UPDATE rounds SET status = ? WHERE id = ?', ('completed', round_id))
+        
+        # Clear redis results and mapping
+        r.delete(redis_key)
+        r.hdel('active_rounds_map', round_id)
+        
         db.commit()
 
         # Return updated game state
@@ -338,6 +354,12 @@ def cancel_round(round_id):
 
         # Mark round as cancelled - keep results for history but don't apply points
         db.execute('UPDATE rounds SET status = ? WHERE id = ?', ('cancelled', round_id))
+        
+        # Clear redis results and mapping
+        r = get_redis()
+        r.delete(f'round:{round_id}:results')
+        r.hdel('active_rounds_map', round_id)
+        
         db.commit()
 
         refresh_game_cache(rnd['game_id'])
@@ -383,6 +405,11 @@ def change_host(round_id):
         db.execute('DELETE FROM round_results WHERE round_id = ?', (round_id,))
         # Update host
         db.execute('UPDATE rounds SET host_player_id = ? WHERE id = ?', (new_host_id, round_id))
+        
+        # Clear redis results
+        r = get_redis()
+        r.delete(f'round:{round_id}:results')
+        
         db.commit()
 
         # Return updated round object
@@ -408,15 +435,30 @@ def get_rounds(game_id):
         )
 
         for rnd in rounds:
-            results = dicts_from_rows(
-                db.execute(
-                    '''SELECT rr.*, p.name as player_name 
-                       FROM round_results rr 
-                       JOIN players p ON rr.player_id = p.id 
-                       WHERE rr.round_id = ?''',
-                    (rnd['id'],)
-                ).fetchall()
-            )
+            if rnd['status'] == 'active':
+                r = get_redis()
+                redis_results = r.hgetall(f'round:{rnd["id"]}:results')
+                results = []
+                for pid_str, res in redis_results.items():
+                    pid = int(pid_str)
+                    p_name = db.execute('SELECT name FROM players WHERE id = ?', (pid,)).fetchone()
+                    results.append({
+                        'round_id': rnd['id'],
+                        'player_id': pid,
+                        'result': res,
+                        'player_name': p_name['name'] if p_name else 'Unknown',
+                        'points_change': 0
+                    })
+            else:
+                results = dicts_from_rows(
+                    db.execute(
+                        '''SELECT rr.*, p.name as player_name 
+                           FROM round_results rr 
+                           JOIN players p ON rr.player_id = p.id 
+                           WHERE rr.round_id = ?''',
+                        (rnd['id'],)
+                    ).fetchall()
+                )
             rnd['results'] = results
 
             host = dict_from_row(

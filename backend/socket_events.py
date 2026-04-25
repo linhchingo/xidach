@@ -5,7 +5,7 @@ Quản lý kết nối, room, và state sync cho real-time game updates.
 from flask import request
 from flask_socketio import join_room, leave_room, emit
 from models import get_db, dict_from_row, dicts_from_rows
-from redis_cache import get_cached_game_state, cache_game_state
+from redis_cache import get_cached_game_state, cache_game_state, get_redis
 
 
 def build_game_state(game_id):
@@ -32,16 +32,32 @@ def build_game_state(game_id):
         round_history = []
 
         for rnd in rounds:
-            results = dicts_from_rows(
-                db.execute(
-                    '''SELECT rr.*, p.name as player_name
-                       FROM round_results rr
-                       JOIN players p ON rr.player_id = p.id
-                       WHERE rr.round_id = ?''',
-                    (rnd['id'],)
-                ).fetchall()
-            )
-            rnd['results'] = results
+            if rnd['status'] == 'active':
+                r = get_redis()
+                redis_results = r.hgetall(f"round:{rnd['id']}:results")
+                results = []
+                for pid_str, res in redis_results.items():
+                    pid = int(pid_str)
+                    player_name = next((p['name'] for p in players if p['id'] == pid), 'Unknown')
+                    results.append({
+                        'player_id': pid,
+                        'result': res,
+                        'player_name': player_name,
+                        'round_id': rnd['id'],
+                        'points_change': 0
+                    })
+                rnd['results'] = results
+            else:
+                results = dicts_from_rows(
+                    db.execute(
+                        '''SELECT rr.*, p.name as player_name
+                           FROM round_results rr
+                           JOIN players p ON rr.player_id = p.id
+                           WHERE rr.round_id = ?''',
+                        (rnd['id'],)
+                    ).fetchall()
+                )
+                rnd['results'] = results
 
             host = dict_from_row(
                 db.execute('SELECT name FROM players WHERE id = ?', (rnd['host_player_id'],)).fetchone()
