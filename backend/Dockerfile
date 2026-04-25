@@ -20,7 +20,7 @@ COPY . .
 # Expose port
 EXPOSE 5000
 
-# Run the app using gunicorn
-# -w 4: 4 worker processes
+# Run the app using gunicorn with geventwebsocket worker
+# -w 1: 1 worker process is sufficient for ~20 users and ensures in-memory session consistency
 # -b 0.0.0.0:5000: bind to all interfaces on port 5000
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:app"]
+CMD ["gunicorn", "-k", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "-w", "1", "-b", "0.0.0.0:5000", "app:app"]

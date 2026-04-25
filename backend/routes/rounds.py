@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import get_db, dict_from_row, dicts_from_rows
+from extensions import socketio
+from redis_cache import refresh_game_cache
 
 rounds_bp = Blueprint('rounds', __name__)
 
@@ -59,6 +61,9 @@ def start_round(game_id):
         rnd = dict_from_row(db.execute('SELECT * FROM rounds WHERE id = ?', (cursor.lastrowid,)).fetchone())
         rnd['host_name'] = host['name']
         rnd['results'] = []
+
+        refresh_game_cache(game_id)
+        socketio.emit('round_started', rnd, room=f'game:{game_id}')
 
         return jsonify(rnd), 201
     finally:
@@ -144,6 +149,9 @@ def submit_result(round_id):
                 (round_id,)
             ).fetchall()
         )
+
+        refresh_game_cache(rnd['game_id'])
+        socketio.emit('result_submitted', {'results': results, 'player_id': player_id}, room=f'game:{rnd["game_id"]}')
 
         return jsonify({'results': results}), 200
     finally:
@@ -304,8 +312,13 @@ def end_round(round_id):
             ).fetchall()
         )
 
+        updated_round_data = {**rnd, 'status': 'completed', 'results': updated_results}
+        
+        refresh_game_cache(game_id)
+        socketio.emit('round_ended', {'round': updated_round_data, 'players': updated_players}, room=f'game:{game_id}')
+
         return jsonify({
-            'round': {**rnd, 'status': 'completed', 'results': updated_results},
+            'round': updated_round_data,
             'players': updated_players
         }), 200
     finally:
@@ -326,6 +339,9 @@ def cancel_round(round_id):
         # Mark round as cancelled - keep results for history but don't apply points
         db.execute('UPDATE rounds SET status = ? WHERE id = ?', ('cancelled', round_id))
         db.commit()
+
+        refresh_game_cache(rnd['game_id'])
+        socketio.emit('round_cancelled', {'round_id': round_id}, room=f'game:{rnd["game_id"]}')
 
         return jsonify({'message': 'Ván chơi đã bị huỷ', 'round_id': round_id}), 200
     finally:
@@ -373,6 +389,9 @@ def change_host(round_id):
         updated_rnd = dict_from_row(db.execute('SELECT * FROM rounds WHERE id = ?', (round_id,)).fetchone())
         updated_rnd['host_name'] = new_host['name']
         updated_rnd['results'] = []
+
+        refresh_game_cache(rnd['game_id'])
+        socketio.emit('host_changed', updated_rnd, room=f'game:{rnd["game_id"]}')
 
         return jsonify(updated_rnd), 200
     finally:

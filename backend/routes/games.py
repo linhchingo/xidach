@@ -1,6 +1,8 @@
 import re
 from flask import Blueprint, request, jsonify
 from models import get_db, dict_from_row, dicts_from_rows
+from extensions import socketio
+from redis_cache import refresh_game_cache, invalidate_game_cache
 
 games_bp = Blueprint('games', __name__)
 
@@ -188,6 +190,10 @@ def end_game(game_id):
         db.execute('UPDATE games SET status = ? WHERE id = ?', ('completed', game_id))
         db.commit()
 
+        # Invalidate cache and emit event
+        invalidate_game_cache(game_id)
+        socketio.emit('game_ended', {'game_id': game_id, 'redirect_url': f'/result/{game_id}'}, room=f'game:{game_id}')
+
         return get_game_statistics(game_id, db)
     finally:
         db.close()
@@ -219,6 +225,9 @@ def delete_game(game_id):
         # Delete from database (cascading handles players, rounds, results)
         db.execute('DELETE FROM games WHERE id = ?', (game_id,))
         db.commit()
+        
+        # Invalidate cache
+        invalidate_game_cache(game_id)
         
         return jsonify({'message': 'Đã xoá cuộc chơi thành công', 'game_id': game_id}), 200
     finally:

@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import get_db, dict_from_row, dicts_from_rows
+from extensions import socketio
+from redis_cache import refresh_game_cache
 
 players_bp = Blueprint('players', __name__)
 
@@ -37,6 +39,8 @@ def add_player(game_id):
                 player = dict_from_row(
                     db.execute('SELECT * FROM players WHERE id = ?', (existing_player['id'],)).fetchone()
                 )
+                refresh_game_cache(game_id)
+                socketio.emit('player_added', player, room=f'game:{game_id}')
                 return jsonify(player), 200
             else:
                 return jsonify({'error': f'Người chơi "{name}" đang có trong cuộc chơi'}), 409
@@ -50,6 +54,8 @@ def add_player(game_id):
         player = dict_from_row(
             db.execute('SELECT * FROM players WHERE id = ?', (cursor.lastrowid,)).fetchone()
         )
+        refresh_game_cache(game_id)
+        socketio.emit('player_added', player, room=f'game:{game_id}')
         return jsonify(player), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -112,10 +118,14 @@ def remove_player(game_id, player_id):
         if has_results > 0 or is_host > 0:
             db.execute('UPDATE players SET is_active = 0 WHERE id = ?', (player_id,))
             db.commit()
+            refresh_game_cache(game_id)
+            socketio.emit('player_removed', {'playerId': player_id, 'deactivated': True}, room=f'game:{game_id}')
             return jsonify({'message': f'Người chơi "{player["name"]}" đã bị loại khỏi cuộc chơi', 'deactivated': True}), 200
         else:
             db.execute('DELETE FROM players WHERE id = ?', (player_id,))
             db.commit()
+            refresh_game_cache(game_id)
+            socketio.emit('player_removed', {'playerId': player_id, 'deactivated': False}, room=f'game:{game_id}')
             return jsonify({'message': f'Đã xóa người chơi "{player["name"]}"', 'deleted': True}), 200
     finally:
         db.close()

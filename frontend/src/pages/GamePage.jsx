@@ -29,6 +29,7 @@ import PlayerHistoryDialog from '../components/PlayerHistoryDialog';
 import LoadingScreen from '../components/LoadingScreen';
 import PinVerifyDialog from '../components/PinVerifyDialog';
 import NotFoundPage from './NotFoundPage';
+import useGameSocket from '../hooks/useGameSocket.js';
 
 export default function GamePage() {
   const { id } = useParams();
@@ -62,6 +63,9 @@ export default function GamePage() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Kích hoạt socket hook
+  useGameSocket(id, 'manager');
 
   useEffect(() => {
     dispatch(fetchGame(id));
@@ -184,9 +188,7 @@ export default function GamePage() {
       const hostPlayerId = activeRound.host_player_id;
       await dispatch(endRound({ roundId: activeRound.id, defaultLosers })).unwrap();
       toast.success(`Ván ${activeRound.round_number} đã kết thúc!`);
-      // Refresh game data to get updated points
-      await dispatch(fetchGame(id));
-      await dispatch(fetchRounds(id));
+
       // Auto-start next round with the same host
       handleStartRound(hostPlayerId);
     } catch (err) {
@@ -229,8 +231,6 @@ export default function GamePage() {
     try {
       await dispatch(cancelRound(activeRound.id)).unwrap();
       toast.info('Ván đã bị huỷ');
-      dispatch(fetchGame(id));
-      dispatch(fetchRounds(id));
     } catch (err) {
       toast.error(err.error || 'Lỗi huỷ ván');
     }
@@ -245,6 +245,7 @@ export default function GamePage() {
         navigate('/');
       } else {
         toast.success('Cuộc chơi đã kết thúc!');
+        // Socket.IO sẽ nhận event game_ended và tự redirect, nhưng phòng hờ cứ để navigate
         navigate(`/result/${id}`);
       }
     } catch (err) {

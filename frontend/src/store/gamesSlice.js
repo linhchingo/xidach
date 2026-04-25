@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../api/axios';
+import { onRoundEnded } from './roundsSlice';
 
 // Async thunks
 export const fetchGames = createAsyncThunk('games/fetchGames', async (status) => {
@@ -90,6 +91,37 @@ const gamesSlice = createSlice({
     setFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
     },
+    syncGameState: (state, action) => {
+      // Nhận data full từ server (game, players, roundHistory)
+      const data = action.payload;
+      state.currentGame = {
+        ...data.game,
+        players: data.players,
+        rounds: data.round_history, // Chỉ cập nhật state cũ nếu cần thiết, vì hiện tại ta lấy roundHistory từ roundsSlice
+      };
+      state.loading = false;
+      state.error = null;
+    },
+    onPlayerAdded: (state, action) => {
+      if (state.currentGame) {
+        const existingIndex = state.currentGame.players.findIndex(p => p.id === action.payload.id);
+        if (existingIndex !== -1) {
+          state.currentGame.players[existingIndex] = action.payload;
+        } else {
+          state.currentGame.players.push(action.payload);
+        }
+      }
+    },
+    onPlayerRemoved: (state, action) => {
+      if (state.currentGame) {
+        if (action.payload.deactivated) {
+          const player = state.currentGame.players.find(p => p.id === action.payload.playerId);
+          if (player) player.is_active = 0;
+        } else {
+          state.currentGame.players = state.currentGame.players.filter(p => p.id !== action.payload.playerId);
+        }
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -168,10 +200,24 @@ const gamesSlice = createSlice({
       // deleteGame
       .addCase(deleteGame.fulfilled, (state, action) => {
         state.list = state.list.filter(g => g.id !== action.payload.game_id);
+      })
+      // socket event: onRoundEnded
+      .addCase(onRoundEnded, (state, action) => {
+        if (state.currentGame && action.payload.players) {
+          state.currentGame.players = action.payload.players;
+        }
       });
   },
 });
 
-export const { clearCurrentGame, clearStatistics, clearError, setFilters } = gamesSlice.actions;
+export const { 
+  clearCurrentGame, 
+  clearStatistics, 
+  clearError, 
+  setFilters,
+  syncGameState,
+  onPlayerAdded,
+  onPlayerRemoved
+} = gamesSlice.actions;
 
 export default gamesSlice.reducer;

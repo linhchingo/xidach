@@ -20,6 +20,7 @@ import RoundHistory from '../components/RoundHistory';
 import PlayerHistoryDialog from '../components/PlayerHistoryDialog';
 import LoadingScreen from '../components/LoadingScreen';
 import NotFoundPage from './NotFoundPage';
+import useGameSocket from '../hooks/useGameSocket.js';
 
 export default function SpectatorPage() {
   const { id } = useParams();
@@ -41,6 +42,9 @@ export default function SpectatorPage() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Kích hoạt socket hook
+  useGameSocket(id, 'spectator');
 
   useEffect(() => {
     dispatch(fetchGame(id));

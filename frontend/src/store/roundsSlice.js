@@ -68,6 +68,29 @@ const roundsSlice = createSlice({
     clearRoundError: (state) => {
       state.error = null;
     },
+    onRoundStarted: (state, action) => {
+      state.activeRound = action.payload;
+    },
+    onResultSubmitted: (state, action) => {
+      if (state.activeRound) {
+        state.activeRound.results = action.payload.results;
+      }
+    },
+    onRoundEnded: (state, action) => {
+      state.activeRound = null;
+      const existsIndex = state.roundHistory.findIndex(r => r.id === action.payload.round.id);
+      if (existsIndex === -1) {
+        state.roundHistory.push(action.payload.round);
+      } else {
+        state.roundHistory[existsIndex] = action.payload.round;
+      }
+    },
+    onRoundCancelled: (state, action) => {
+      state.activeRound = null;
+    },
+    onHostChanged: (state, action) => {
+      state.activeRound = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -110,5 +133,13 @@ const roundsSlice = createSlice({
   },
 });
 
-export const { clearActiveRound, clearRoundError } = roundsSlice.actions;
+export const { 
+  clearActiveRound, 
+  clearRoundError,
+  onRoundStarted,
+  onResultSubmitted,
+  onRoundEnded,
+  onRoundCancelled,
+  onHostChanged
+} = roundsSlice.actions;
 export default roundsSlice.reducer;
