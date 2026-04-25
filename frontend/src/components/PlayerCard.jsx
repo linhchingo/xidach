@@ -26,8 +26,8 @@ const resultBadgeStyle = {
   lose_big: { bgcolor: 'rgba(255,82,82,0.15)', color: '#ff5252', border: '1px solid rgba(255,82,82,0.4)' },
 };
 
-// Thứ tự hiển thị các nút cho non-host: 3 cột hàng 1, 2+1 hàng 2
-const NON_HOST_BUTTONS = ['win', 'win_big', 'draw', 'lose', 'pay'];
+// Thứ tự hiển thị các nút cho non-host: 2 hàng, mỗi hàng 3 nút
+const NON_HOST_BUTTONS = ['win', 'win_big', 'draw', 'lose', 'lose_big', 'pay'];
 
 export default function PlayerCard({
   player, isHost, roundActive, currentResult, onSelectResult,
@@ -193,10 +193,10 @@ export default function PlayerCard({
         {/* ── NON-HOST action buttons ── */}
         {roundActive && !isHost && isActive && (
           <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            {/* Row 1: Thắng | Thắng đậm | Hoà (ô giữa rộng hơn để chứa chữ dài) */}
+            {/* Row 1: Thắng | Thắng x2 | Hoà */}
             <Box sx={{
               display: 'grid',
-              gridTemplateColumns: { xs: 'minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr)', sm: '1fr 1fr 1fr' },
+              gridTemplateColumns: 'repeat(3, 1fr)',
               gap: 0.5
             }}>
               {['win', 'win_big', 'draw'].map((result) => (
@@ -206,9 +206,13 @@ export default function PlayerCard({
                 />
               ))}
             </Box>
-            {/* Row 2: Thua | Đền (full width) */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 0.5 }}>
-              {['lose', 'pay'].map((result) => (
+            {/* Row 2: Thua | Thua x2 | Đền */}
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 0.5
+            }}>
+              {['lose', 'lose_big', 'pay'].map((result) => (
                 <ActionButton
                   key={result} result={result} currentResult={currentResult}
                   onSelect={() => onSelectResult(player.id, result)}
@@ -258,7 +262,8 @@ function ActionButton({ result, currentResult, onSelect }) {
   const isSelected = currentResult === result;
   const glowMap = {
     win: 'rgba(0,230,118,0.35)', win_big: 'rgba(255,171,64,0.4)',
-    lose: 'rgba(255,82,82,0.35)', pay: 'rgba(3,155,229,0.35)',
+    lose: 'rgba(255,82,82,0.35)', lose_big: 'rgba(255,82,82,0.5)',
+    pay: 'rgba(3,155,229,0.35)',
     draw: 'rgba(255,255,255,0.2)',
   };
   return (
