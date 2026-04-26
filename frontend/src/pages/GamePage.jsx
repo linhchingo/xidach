@@ -700,12 +700,10 @@ export default function GamePage() {
       <Box sx={{
         display: 'grid',
         gridTemplateColumns: {
-          xs: 'repeat(2, minmax(0, 1fr))',
-          sm: 'repeat(2, minmax(0, 1fr))',
-          md: 'repeat(3, minmax(0, 1fr))',
-          lg: 'repeat(4, minmax(0, 1fr))'
+          xs: '1fr',
+          sm: 'repeat(2, minmax(0, 1fr))'
         },
-        gap: { xs: 1, sm: 2 },
+        gap: { xs: 1.5, sm: 2 },
         mb: 4,
         alignItems: 'stretch'
       }}>
@@ -748,11 +746,10 @@ export default function GamePage() {
           <Box sx={{
             display: 'grid',
             gridTemplateColumns: {
-              xs: 'repeat(2, minmax(0, 1fr))',
-              sm: 'repeat(2, minmax(0, 1fr))',
-              md: 'repeat(4, minmax(0, 1fr))'
+              xs: '1fr',
+              sm: 'repeat(2, minmax(0, 1fr))'
             },
-            gap: { xs: 1, sm: 1.5 }
+            gap: { xs: 1.5, sm: 2 }
           }}>
             {players
               .filter(p => p.is_active === 0)
