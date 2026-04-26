@@ -14,12 +14,12 @@ import ComicText from './ComicText';
  * - opacity: how visible the text is (x2 results are more prominent)
  */
 const comicResultConfig = {
-  win: { label: 'Win!', color: '#4CAF50', dotColor: '#2E7D32', rotate: '-8deg', opacity: 0.7 },
-  win_big: { label: 'Win x2!', color: '#FACC15', dotColor: '#EF4444', rotate: '-8deg', opacity: 1 },
-  draw: { label: 'Draw', color: '#9E9E9E', dotColor: '#616161', rotate: '-8deg', opacity: 0.5 },
-  lose: { label: 'Lose!', color: '#ff5252', dotColor: '#B71C1C', rotate: '-8deg', opacity: 0.7 },
-  lose_big: { label: 'Lose x2!', color: '#ff1744', dotColor: '#880E4F', rotate: '-8deg', opacity: 1 },
-  pay: { label: 'Pay!', color: '#CE93D8', dotColor: '#7B1FA2', rotate: '-8deg', opacity: 1 },
+  win: { label: 'Win!', color: '#4CAF50', dotColor: '#2E7D32', rotate: '-8deg', opacity: 0.3 },
+  win_big: { label: 'Win x2!', color: '#FACC15', dotColor: '#EF4444', rotate: '-8deg', opacity: 0.7 },
+  draw: { label: 'Draw', color: '#9E9E9E', dotColor: '#616161', rotate: '-8deg', opacity: 0.3 },
+  lose: { label: 'Lose!', color: '#ff5252', dotColor: '#B71C1C', rotate: '-8deg', opacity: 0.3 },
+  lose_big: { label: 'Lose x2!', color: '#ff1744', dotColor: '#880E4F', rotate: '-8deg', opacity: 0.7 },
+  pay: { label: 'Pay!', color: '#CE93D8', dotColor: '#7B1FA2', rotate: '-8deg', opacity: 0.7 },
 };
 
 /**
@@ -132,7 +132,6 @@ export default function SpectatorPlayerCard({
       }}>
         {/* Left side: Avatar + Name — clickable for history */}
         <Box
-          onClick={() => onShowHistory && onShowHistory(player)}
           sx={{
             display: 'flex',
             alignItems: 'center',
@@ -154,6 +153,7 @@ export default function SpectatorPlayerCard({
             }} />
           )}
           <Avatar
+            onClick={() => onShowHistory && onShowHistory(player)}
             src={`https://i.pravatar.cc/150?u=${player.name}-${player.id}`}
             sx={{
               width: { xs: 36, sm: 44 }, height: { xs: 36, sm: 44 },
@@ -162,7 +162,10 @@ export default function SpectatorPlayerCard({
           >
             {player.name.charAt(0).toUpperCase()}
           </Avatar>
-          <Box sx={{ minWidth: 0 }}>
+          <Box
+            onClick={() => onShowHistory && onShowHistory(player)}
+            sx={{ minWidth: 0 }}
+          >
             <Typography
               variant="subtitle2" fontWeight={700} noWrap
               sx={{
