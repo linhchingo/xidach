@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import get_db, dict_from_row, dicts_from_rows
 from extensions import socketio
-from redis_cache import refresh_game_cache
+from redis_cache import refresh_game_cache, get_redis
 
 players_bp = Blueprint('players', __name__)
 
@@ -100,8 +100,12 @@ def remove_player(game_id, player_id):
             if active_count <= 2:
                 return jsonify({'error': 'Không thể xoá người chơi khi ván chưa kết thúc và chỉ còn 2 người'}), 400
                 
-            # Xoá kết quả của người chơi trong ván hiện tại (để lịch sử là không tham gia)
+            # Xoá kết quả của người chơi trong ván hiện tại (cả DB và Redis)
             db.execute('DELETE FROM round_results WHERE round_id = ? AND player_id = ?', (active_round['id'], player_id))
+            
+            r = get_redis()
+            r.hdel(f'round:{active_round["id"]}:results', player_id)
+            
             db.commit()
 
         # Check if player has any round results
