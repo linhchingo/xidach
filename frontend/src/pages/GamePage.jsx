@@ -622,9 +622,13 @@ export default function GamePage() {
               </Button>
             </Box>
           </Box>
-          {!allNonHostSubmitted && (
+          {!allNonHostSubmitted ? (
             <Alert severity="info" sx={{ mt: 1.5, bgcolor: 'rgba(124, 77, 255, 0.08)' }}>
               Chờ tất cả người chơi chọn kết quả ({roundResults.length}/{nonHostPlayers.length} đã chọn)
+            </Alert>
+          ) : (
+            <Alert severity="success" sx={{ mt: 1.5, bgcolor: 'rgba(77, 255, 187, 0.08)' }}>
+              Tất cả người chơi Đã có kết quả
             </Alert>
           )}
         </Paper>
