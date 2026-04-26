@@ -88,6 +88,11 @@ export default function SpectatorPage() {
   const currentHostName = activePlayers.find(p => p.id === currentHostId)?.name;
 
   const nonHostPlayers = activePlayers.filter(p => p.id !== hostId);
+  // Chỉ đếm những kết quả từ những người chơi hiện đang hoạt động và không phải là Host
+  const submittedCount = roundResults.filter(r => 
+    r.result !== null && 
+    nonHostPlayers.some(p => p.id === r.player_id)
+  ).length;
 
   const getPlayerResult = (playerId) => {
     const result = roundResults.find(r => r.player_id === playerId);
@@ -149,12 +154,12 @@ export default function SpectatorPage() {
         />
         {activeRound ? (
           <Chip
-            label={`${roundResults.length}/${nonHostPlayers.length}`}
+            label={`${submittedCount}/${nonHostPlayers.length}`}
             size="small"
             sx={{
               height: 32, fontSize: '0.7rem', fontWeight: 700,
-              bgcolor: roundResults.length === nonHostPlayers.length ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 171, 64, 0.15)',
-              color: roundResults.length === nonHostPlayers.length ? '#00e676' : '#ffab40'
+              bgcolor: submittedCount === nonHostPlayers.length ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 171, 64, 0.15)',
+              color: submittedCount === nonHostPlayers.length ? '#00e676' : '#ffab40'
             }}
           />
         ) : (
@@ -316,14 +321,14 @@ export default function SpectatorPage() {
               />
             </Box>
             <Chip
-              label={`${roundResults.length}/${nonHostPlayers.length} đã chọn`}
+              label={`${submittedCount}/${nonHostPlayers.length} đã chọn`}
               size="small"
               sx={{
                 height: 28, fontWeight: 700, fontSize: '0.75rem',
-                bgcolor: roundResults.length === nonHostPlayers.length
+                bgcolor: submittedCount === nonHostPlayers.length
                   ? 'rgba(0, 230, 118, 0.15)'
                   : 'rgba(255, 171, 64, 0.12)',
-                color: roundResults.length === nonHostPlayers.length ? '#00e676' : '#ffab40',
+                color: submittedCount === nonHostPlayers.length ? '#00e676' : '#ffab40',
               }}
             />
           </Box>

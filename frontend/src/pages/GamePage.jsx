@@ -116,11 +116,18 @@ export default function GamePage() {
   };
 
   const nonHostPlayers = activePlayers.filter(p => p.id !== hostId);
-  const hasPay = roundResults.some(r => r.result === 'pay');
+
+  // Chỉ đếm những kết quả từ những người chơi hiện đang hoạt động và không phải là Host
+  const submittedCount = roundResults.filter(r =>
+    r.result !== null &&
+    nonHostPlayers.some(p => p.id === r.player_id)
+  ).length;
+
+  const hasPay = roundResults.some(r => r.result === 'pay' && nonHostPlayers.some(p => p.id === r.player_id));
   // Round can end if: someone chose pay (instant end) OR all non-host active players submitted
   const allNonHostSubmitted = activeRound && (
     hasPay ||
-    (nonHostPlayers.length > 0 && nonHostPlayers.every(p => roundResults.some(r => r.player_id === p.id)))
+    (nonHostPlayers.length > 0 && submittedCount === nonHostPlayers.length)
   );
 
   const handleSelectResult = async (playerId, result) => {
@@ -413,7 +420,7 @@ export default function GamePage() {
               sx={{ height: 32, fontSize: '0.7rem', fontWeight: 700, bgcolor: 'rgba(124, 77, 255, 0.2)', color: '#b47cff' }}
             />
             <Chip
-              label={`${roundResults.length}/${nonHostPlayers.length}`}
+              label={`${submittedCount}/${nonHostPlayers.length}`}
               size="small"
               sx={{ height: 32, fontSize: '0.7rem', fontWeight: 700, bgcolor: 'rgba(0, 230, 118, 0.15)', color: '#00e676' }}
             />
@@ -624,11 +631,11 @@ export default function GamePage() {
           </Box>
           {!allNonHostSubmitted ? (
             <Alert severity="info" sx={{ mt: 1.5, bgcolor: 'rgba(124, 77, 255, 0.08)' }}>
-              Chờ tất cả người chơi chọn kết quả ({roundResults.length}/{nonHostPlayers.length} đã chọn)
+              Chờ tất cả người chơi chọn kết quả ({submittedCount}/{nonHostPlayers.length} đã chọn)
             </Alert>
           ) : (
             <Alert severity="success" sx={{ mt: 1.5, bgcolor: 'rgba(77, 255, 187, 0.08)' }}>
-              Tất cả người chơi Đã có kết quả
+              Tất cả người chơi đã có kết quả
             </Alert>
           )}
         </Paper>
