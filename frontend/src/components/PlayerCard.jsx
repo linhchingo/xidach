@@ -38,27 +38,6 @@ export default function PlayerCard({
   const money = Math.abs(points) * (moneyPerPoint || 0);
   const isActive = player.is_active !== 0;
 
-  const renderBadge = () => {
-    if (!currentResult) return null;
-    const cfg = resultConfig[currentResult];
-    if (!cfg) return null;
-    const extraStyle = resultBadgeStyle[currentResult] || {};
-    return (
-      <Box sx={{ mt: 'auto', mb: roundActive && !isHost && isActive ? 1 : 0 }}>
-        <Chip
-          icon={React.cloneElement(cfg.icon, { sx: { fontSize: '0.85rem !important' } })}
-          label={cfg.label}
-          size="small"
-          sx={{
-            fontWeight: 700, height: 22, fontSize: '0.7rem',
-            ...extraStyle
-          }}
-          color={extraStyle.color ? undefined : cfg.color}
-        />
-      </Box>
-    );
-  };
-
   return (
     <Card
       sx={{
@@ -86,7 +65,7 @@ export default function PlayerCard({
           label="HOST"
           size="small"
           color="warning"
-          sx={{ position: 'absolute', top: -10, right: 15, fontWeight: 800, fontSize: '0.6rem', height: 18, zIndex: 3 }}
+          sx={{ position: 'absolute', top: -10, right: "50%", fontWeight: 800, fontSize: '0.6rem', height: 18, zIndex: 3, transform: "translateX(50%)" }}
         />
       )}
 
@@ -186,9 +165,6 @@ export default function PlayerCard({
             </Typography>
           )}
         </Box>
-
-        {/* Current result badge */}
-        {renderBadge()}
 
         {/* ── NON-HOST action buttons ── */}
         {roundActive && !isHost && isActive && (
