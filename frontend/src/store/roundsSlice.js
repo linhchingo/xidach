@@ -126,7 +126,9 @@ const roundsSlice = createSlice({
       })
       // fetchRounds
       .addCase(fetchRounds.fulfilled, (state, action) => {
-        state.roundHistory = action.payload;
+        const rounds = action.payload;
+        state.activeRound = rounds.find(r => r.status === 'active') || null;
+        state.roundHistory = rounds.filter(r => r.status !== 'active');
       })
       // removePlayer (from gamesSlice)
       .addCase(removePlayer.fulfilled, (state, action) => {

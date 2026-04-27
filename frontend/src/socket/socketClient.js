@@ -7,8 +7,7 @@ const socket = io('/', {
   autoConnect: false,
   reconnection: true,
   reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
-  transports: ['websocket'],
+  reconnectionDelayMax: 5000
 });
 
 export default socket;

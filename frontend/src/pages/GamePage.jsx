@@ -85,16 +85,7 @@ export default function GamePage() {
     }
   }, [currentGame, id, navigate]);
 
-  // Check if there's an active round from the game data
-  useEffect(() => {
-    if (currentGame && currentGame.rounds) {
-      const active = currentGame.rounds.find(r => r.status === 'active');
-      if (active && !activeRound) {
-        // Restore active round state
-        dispatch({ type: 'rounds/startRound/fulfilled', payload: active });
-      }
-    }
-  }, [currentGame]);
+
 
   const players = currentGame?.players || [];
   const hostId = activeRound?.host_player_id;

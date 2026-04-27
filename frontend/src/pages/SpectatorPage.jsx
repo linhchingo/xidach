@@ -64,15 +64,7 @@ export default function SpectatorPage() {
     }
   }, [currentGame, id, navigate]);
 
-  // Restore active round from game data
-  useEffect(() => {
-    if (currentGame && currentGame.rounds) {
-      const active = currentGame.rounds.find(r => r.status === 'active');
-      if (active && !activeRound) {
-        dispatch({ type: 'rounds/startRound/fulfilled', payload: active });
-      }
-    }
-  }, [currentGame]);
+
 
   const players = currentGame?.players || [];
   const hostId = activeRound?.host_player_id;
