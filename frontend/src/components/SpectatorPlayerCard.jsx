@@ -71,13 +71,15 @@ export default function SpectatorPlayerCard({
         transition: 'all 0.3s ease',
         opacity: isActive ? 1 : 0.6,
         filter: isActive ? 'none' : 'grayscale(0.5)',
-        '&:hover': isActive ? {
-          transform: 'translateY(-4px)',
-          boxShadow: currentResult ? (
-            currentResult.includes('win') ? '0 8px 25px rgba(76, 175, 80, 0.25)' :
-              currentResult.includes('lose') ? '0 8px 25px rgba(255, 82, 82, 0.25)' : '0 8px 25px rgba(0,0,0,0.2)'
-          ) : '0 8px 25px rgba(0,0,0,0.2)',
-        } : {}
+        '@media (hover: hover)': {
+          '&:hover': isActive ? {
+            transform: 'translateY(-4px)',
+            boxShadow: currentResult ? (
+              currentResult.includes('win') ? '0 8px 25px rgba(76, 175, 80, 0.25)' :
+                currentResult.includes('lose') ? '0 8px 25px rgba(255, 82, 82, 0.25)' : '0 8px 25px rgba(0,0,0,0.2)'
+            ) : '0 8px 25px rgba(0,0,0,0.2)',
+          } : {}
+        }
       }}
     >
       {/* HOST badge */}
