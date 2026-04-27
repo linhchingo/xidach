@@ -294,14 +294,12 @@ export default function GamePage() {
   const handleHostBigWin = async (selectedIds) => {
     if (!activeRound || selectedIds.length === 0) return;
     try {
-      // Submit lose_big for each selected player sequentially
-      for (const playerId of selectedIds) {
-        await dispatch(submitResult({
-          roundId: activeRound.id,
-          playerId,
-          result: 'lose_big'
-        })).unwrap();
-      }
+      // Submit lose_big for all selected players simultaneously
+      await dispatch(submitResult({
+        roundId: activeRound.id,
+        playerId: selectedIds,
+        result: 'lose_big'
+      })).unwrap();
       toast.success(`Đã đánh dấu ${selectedIds.length} người Thua x2!`);
     } catch (err) {
       toast.error(err.error || 'Lỗi ghi nhận Thắng x2');
