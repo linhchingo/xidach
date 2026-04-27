@@ -14,4 +14,6 @@ socketio = SocketIO(
     message_queue=REDIS_URL,
     logger=False,
     engineio_logger=False,
+    ping_timeout=10,
+    ping_interval=5,
 )

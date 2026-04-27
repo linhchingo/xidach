@@ -60,6 +60,16 @@ export default function useGameSocket(gameId, role = 'spectator') {
     socket.on('round_cancelled', (data) => dispatch(onRoundCancelled(data)));
     socket.on('host_changed', (round) => dispatch(onHostChanged(round)));
 
+    // Xử lý khi quay lại ứng dụng (ví dụ mở lại điện thoại)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !socket.connected) {
+        console.log('[Socket.IO] App visible, reconnecting...');
+        socket.connect();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       socket.emit('leave_game', { game_id: gameId });
       socket.off('connect', handleConnect);
@@ -73,6 +83,7 @@ export default function useGameSocket(gameId, role = 'spectator') {
       socket.off('round_ended');
       socket.off('round_cancelled');
       socket.off('host_changed');
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       socket.disconnect();
     };
   }, [gameId, role, dispatch, navigate]);
