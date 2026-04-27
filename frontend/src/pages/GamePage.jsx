@@ -7,6 +7,8 @@ import {
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import DoDisturbAltIcon from '@mui/icons-material/DoDisturbAlt';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import StopIcon from '@mui/icons-material/Stop';
 import CancelIcon from '@mui/icons-material/Cancel';
 import FlagIcon from '@mui/icons-material/Flag';
@@ -521,178 +523,182 @@ export default function GamePage() {
             </Paper>
           </Grid>
           <Grid xs={6} sm={3}>
-            <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Host hiện tại</Typography>
-              <Typography variant="h6" fontWeight={700} noWrap sx={{ fontSize: '0.9rem', pt: 0.5 }}>
-                {currentHostName || 'Chưa chọn'}
-              </Typography>
+            <Paper
+              onClick={() => {
+                setShowHistory(!showHistory);
+                if (!showHistory) {
+                  setTimeout(() => {
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                  }, 100);
+                }
+              }}
+              sx={{
+                p: 1.5, textAlign: 'center', bgcolor: showHistory ? 'rgba(0, 229, 255, 0.12)' : 'rgba(255,255,255,0.03)',
+                borderRadius: 2, cursor: 'pointer', border: showHistory ? '1px solid rgba(0, 229, 255, 0.3)' : '1px solid transparent',
+                transition: 'all 0.2s', userSelect: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>Lịch sử</Typography>
+              <HistoryIcon sx={{ color: showHistory ? '#00e5ff' : 'text.secondary' }} />
             </Paper>
           </Grid>
           <Grid xs={6} sm={3}>
-            <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Mỗi điểm</Typography>
-              <Typography variant="h6" fontWeight={700}>{parseInt(currentGame?.money_per_point || 0).toLocaleString('vi-VN')}đ</Typography>
+            <Paper
+              onClick={() => setEndGameConfirmOpen(true)}
+              sx={{
+                p: 1.5, textAlign: 'center', bgcolor: 'rgba(244, 67, 54, 0.1)',
+                borderRadius: 2, cursor: 'pointer', border: '1px dashed rgba(244, 67, 54, 0.5)',
+                transition: 'all 0.2s', userSelect: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              <Typography variant="caption" sx={{ display: 'block', mb: 0.5, color: '#f44336' }}>Kết thúc</Typography>
+              <FlagIcon sx={{ color: '#f44336' }} />
             </Paper>
           </Grid>
         </Grid>
-
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: '0.875rem' }}>
-          {new Date(currentGame.game_date).toLocaleDateString('vi-VN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-        </Typography>
       </Box>
 
-      {/* Active Round Banner */}
-      {activeRound && (
-        <Paper
-          sx={{
-            p: 2,
-            mb: 3,
-            mx: { xs: -1.5, sm: 0 },
-            borderRadius: { xs: 0, sm: 2 },
-            background: 'linear-gradient(135deg, rgba(124, 77, 255, 0.12), rgba(0, 229, 255, 0.08))',
-            border: '1px solid rgba(124, 77, 255, 0.3)',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PlayArrowIcon color="primary" fontSize="small" />
-              <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                Ván {activeRound.round_number}
-              </Typography>
-              <Chip
-                icon={<StarIcon sx={{ fontSize: '0.9rem !important' }} />}
-                label={`Host: ${activeRound.host_name}`}
-                size="small"
-                sx={{ bgcolor: 'rgba(255, 171, 64, 0.15)', color: '#ffab40', height: 24, fontSize: '0.75rem' }}
-              />
+      {/* Control Panel (Round + Actions) */}
+      <Paper
+        sx={{
+          p: 2,
+          mb: 3,
+          mx: { xs: -1.5, sm: 0 },
+          borderRadius: { xs: 0, sm: 2 },
+          background: activeRound ? 'linear-gradient(135deg, rgba(124, 77, 255, 0.12), rgba(0, 229, 255, 0.08))' : 'rgba(255,255,255,0.02)',
+          border: activeRound ? '1px solid rgba(124, 77, 255, 0.3)' : '1px solid rgba(255,255,255,0.05)',
+          transition: 'all 0.3s ease'
+        }}
+      >
+        {activeRound ? (
+          <>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <PlayArrowIcon color="primary" fontSize="small" />
+                <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  Ván {activeRound.round_number}
+                </Typography>
+                <Chip
+                  icon={<StarIcon sx={{ fontSize: '0.9rem !important' }} />}
+                  label={`Host: ${activeRound.host_name}`}
+                  size="small"
+                  sx={{ bgcolor: 'rgba(255, 171, 64, 0.15)', color: '#ffab40', height: 24, fontSize: '0.75rem' }}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'flex-end', sm: 'flex-start' }, flexWrap: 'wrap' }}>
+                <Tooltip
+                  title={!allNonHostSubmitted ? 'Một số người chơi chưa chọn — nhấn để kết thúc sớm' : 'Tất cả đã chọn xong!'}
+                  placement="top"
+                >
+                  <Button
+                    variant="contained"
+                    color="success"
+                    size="small"
+                    startIcon={<StopIcon />}
+                    onClick={handleEndRoundClick}
+                    sx={{
+                      ...(allNonHostSubmitted && {
+                        animation: 'heartbeat 1.5s ease-in-out infinite',
+                        outline: '2px solid',
+                        outlineColor: 'success.main',
+                        outlineOffset: '2px',
+                      }),
+                    }}
+                  >
+                    Kết thúc ván
+                  </Button>
+                </Tooltip>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  startIcon={<CancelIcon />}
+                  onClick={() => setCancelConfirmOpen(true)}
+                >
+                  Huỷ ván
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="warning"
+                  size="small"
+                  startIcon={<StarIcon />}
+                  onClick={handleOpenChangeHostDuringRound}
+                >
+                  Đổi Host
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<PersonAddIcon />}
+                  onClick={() => setAddPlayerOpen(true)}
+                >
+                  Thêm
+                </Button>
+              </Box>
             </Box>
-            <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'flex-end', sm: 'flex-start' }, flexWrap: 'wrap' }}>
-              <Tooltip
-                title={!allNonHostSubmitted ? 'Một số người chơi chưa chọn — nhấn để kết thúc sớm' : 'Tất cả đã chọn xong!'}
-                placement="top"
-              >
+            {!allNonHostSubmitted ? (
+              <Alert severity="info" sx={{ mt: 1.5, bgcolor: 'rgba(124, 77, 255, 0.08)' }}>
+                Chờ tất cả người chơi chọn kết quả ({submittedCount}/{nonHostPlayers.length} đã chọn)
+              </Alert>
+            ) : (
+              <Alert severity="success" sx={{ mt: 1.5, bgcolor: 'rgba(77, 255, 187, 0.08)' }}>
+                Tất cả người chơi đã có kết quả
+              </Alert>
+            )}
+          </>
+        ) : (
+          <>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
+              {activePlayers.length >= 2 ?
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CheckCircleIcon color="success" fontSize="small" />
+                  <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1rem', sm: '1.25rem' }, color: 'success.main' }}>
+                    Sẵn sàng bắt đầu ván mới
+                  </Typography>
+                </Box> :
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <DoDisturbAltIcon color="error" fontSize="small" />
+                  <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1rem', sm: '1.25rem' }, color: 'error.main' }}>
+                    Chờ đợi cần thêm người chơi
+                  </Typography>
+                </Box>
+              }
+              <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'flex-end', sm: 'flex-start' }, flexWrap: 'wrap' }}>
                 <Button
                   variant="contained"
-                  color="success"
                   size="small"
-                  startIcon={<StopIcon />}
-                  onClick={handleEndRoundClick}
-                  sx={{
-                    ...(allNonHostSubmitted && {
-                      animation: 'heartbeat 1.5s ease-in-out infinite',
-                      outline: '2px solid',
-                      outlineColor: 'success.main',
-                      outlineOffset: '2px',
-                    }),
-                  }}
+                  startIcon={<PlayArrowIcon />}
+                  onClick={handleStartRoundClick}
+                  disabled={activePlayers.length < 2}
                 >
-                  Kết thúc ván
+                  Ván mới {currentHostName ? `(${currentHostName})` : ''}
                 </Button>
-              </Tooltip>
-              <Button
-                variant="outlined"
-                color="error"
-                size="small"
-                startIcon={<CancelIcon />}
-                onClick={() => setCancelConfirmOpen(true)}
-              >
-                Huỷ ván
-              </Button>
-              <Button
-                variant="outlined"
-                color="warning"
-                size="small"
-                startIcon={<StarIcon />}
-                onClick={handleOpenChangeHostDuringRound}
-              >
-                Đổi Host
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                color="error"
-                startIcon={<FlagIcon />}
-                onClick={() => setEndGameConfirmOpen(true)}
-                sx={{ borderStyle: 'dashed' }}
-              >
-                Kết thúc
-              </Button>
+                <Button
+                  variant="outlined"
+                  color="warning"
+                  size="small"
+                  startIcon={<StarIcon />}
+                  onClick={handleOpenChangeHost}
+                  disabled={activePlayers.length < 2}
+                >
+                  Đổi Host
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<PersonAddIcon />}
+                  onClick={() => setAddPlayerOpen(true)}
+                >
+                  Thêm
+                </Button>
+              </Box>
             </Box>
-          </Box>
-          {!allNonHostSubmitted ? (
-            <Alert severity="info" sx={{ mt: 1.5, bgcolor: 'rgba(124, 77, 255, 0.08)' }}>
-              Chờ tất cả người chơi chọn kết quả ({submittedCount}/{nonHostPlayers.length} đã chọn)
+            <Alert severity="warning" sx={{ mt: 1.5, bgcolor: 'rgba(255, 171, 64, 0.08)', color: 'warning.main' }}>
+              {activePlayers.length >= 2 ? 'Bấm Ván mới để kiếm tiền!' : `Hiện đang có ${activePlayers.length} người. Cần tối thiểu 2 người.`}
             </Alert>
-          ) : (
-            <Alert severity="success" sx={{ mt: 1.5, bgcolor: 'rgba(77, 255, 187, 0.08)' }}>
-              Tất cả người chơi đã có kết quả
-            </Alert>
-          )}
-        </Paper>
-      )}
-
-      {/* Action Buttons */}
-      <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<PersonAddIcon />}
-          onClick={() => setAddPlayerOpen(true)}
-          sx={{ flex: { xs: '1 1 auto', sm: 'initial' } }}
-        >
-          Người chơi
-        </Button>
-        {!activeRound && (
-          <>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<PlayArrowIcon />}
-              onClick={handleStartRoundClick}
-              disabled={activePlayers.length < 2}
-              sx={{ flex: { xs: '1 1 100%', sm: 'initial' } }}
-            >
-              Ván mới {currentHostName ? `(${currentHostName})` : ''}
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              color="warning"
-              startIcon={<StarIcon />}
-              onClick={handleOpenChangeHost}
-              disabled={activePlayers.length < 2}
-              sx={{ flex: { xs: '1 1 auto', sm: 'initial' } }}
-            >
-              Đổi Host
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              color="error"
-              startIcon={<FlagIcon />}
-              onClick={() => setEndGameConfirmOpen(true)}
-              sx={{ flex: { xs: '1 1 auto', sm: 'initial' } }}
-            >
-              Kết thúc
-            </Button>
           </>
         )}
-        <Button
-          variant="text"
-          size="small"
-          startIcon={<HistoryIcon />}
-          onClick={() => setShowHistory(!showHistory)}
-          sx={{ flex: { xs: '1 1 auto', sm: 'initial' } }}
-        >
-          {showHistory ? 'Ẩn lịch sử' : 'Lịch sử'}
-        </Button>
-      </Box>
-
-      {activePlayers.length < 2 && !activeRound && (
-        <Alert severity="warning" sx={{ mb: 3 }}>
-          Cần tối thiểu 2 người chơi đang hoạt động để bắt đầu ván. Hiện có {activePlayers.length} người.
-        </Alert>
-      )}
+      </Paper>
 
       {/* Players Grid */}
       <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
