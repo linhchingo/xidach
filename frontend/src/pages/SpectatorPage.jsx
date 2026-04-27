@@ -89,8 +89,8 @@ export default function SpectatorPage() {
 
   const nonHostPlayers = activePlayers.filter(p => p.id !== hostId);
   // Chỉ đếm những kết quả từ những người chơi hiện đang hoạt động và không phải là Host
-  const submittedCount = roundResults.filter(r => 
-    r.result !== null && 
+  const submittedCount = roundResults.filter(r =>
+    r.result !== null &&
     nonHostPlayers.some(p => p.id === r.player_id)
   ).length;
 
@@ -245,106 +245,96 @@ export default function SpectatorPage() {
         </Box>
       </Box>
 
-      {/* Spectator Banner */}
-      <Alert
-        severity="info"
-        icon={<VisibilityIcon />}
-        sx={{
-          mb: 3,
-          bgcolor: 'rgba(0, 229, 255, 0.06)',
-          border: '1px solid rgba(0, 229, 255, 0.15)',
-          '& .MuiAlert-icon': { color: '#00e5ff' },
-        }}
-      >
-        Chế độ <strong>Xem</strong> — không thể thao tác điều khiển
-      </Alert>
-
       {/* Stats Grid */}
-      <Box sx={{ width: '100%' }}>
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid xs={6} sm={3}>
-            <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Ván chơi</Typography>
-              <Typography variant="h6" fontWeight={700}>{roundHistory.length}</Typography>
-            </Paper>
-          </Grid>
-          <Grid xs={6} sm={3}>
-            <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Người chơi</Typography>
-              <Typography variant="h6" fontWeight={700}>{activePlayers.length}</Typography>
-            </Paper>
-          </Grid>
-          <Grid xs={6} sm={3}>
-            <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Host hiện tại</Typography>
-              <Typography variant="h6" fontWeight={700} noWrap sx={{ fontSize: '0.9rem', pt: 0.5 }}>
-                {currentHostName || 'Chưa chọn'}
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid xs={6} sm={3}>
-            <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Mỗi điểm</Typography>
-              <Typography variant="h6" fontWeight={700}>{parseInt(currentGame?.money_per_point || 0).toLocaleString('vi-VN')}đ</Typography>
-            </Paper>
-          </Grid>
-        </Grid>
+      <Box sx={{ width: '100%', mb: 3 }}>
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: { xs: 0.75, sm: 2 },
+        }}>
+          {/* Ván chơi */}
+          <Paper sx={{
+            p: { xs: 0.75, sm: 1.5 },
+            textAlign: 'center',
+            bgcolor: activeRound ? 'rgba(124, 77, 255, 0.15)' : 'rgba(255,255,255,0.03)',
+            borderRadius: 2,
+            display: 'flex', flexDirection: 'column', justifyContent: 'center',
+            border: activeRound ? '1px solid rgba(124, 77, 255, 0.6)' : '1px solid transparent',
+            boxShadow: activeRound ? '0 0 15px rgba(124, 77, 255, 0.3)' : 'none',
+            transition: 'all 0.3s ease'
+          }}>
+            <Typography variant="caption" sx={{ display: 'block', fontSize: { xs: '0.6rem', sm: '0.75rem' }, lineHeight: 1.2, color: activeRound ? '#b47cff' : 'text.secondary', fontWeight: activeRound ? 600 : 400 }}>
+              {activeRound ? 'Đang chơi' : 'Ván đã chơi'}
+            </Typography>
+            <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '0.9rem', sm: '1.25rem' }, mt: 0.5, color: activeRound ? '#fff' : 'text.primary' }}>
+              {activeRound ? `Ván ${activeRound.round_number}` : roundHistory.length}
+            </Typography>
+          </Paper>
 
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: '0.875rem' }}>
-          {new Date(currentGame.game_date).toLocaleDateString('vi-VN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-        </Typography>
-      </Box>
+          {/* Người chơi / Tiến độ */}
+          <Paper sx={{
+            p: { xs: 0.75, sm: 1.5 },
+            textAlign: 'center',
+            bgcolor: activeRound
+              ? (submittedCount === nonHostPlayers.length ? 'rgba(0, 230, 118, 0.12)' : 'rgba(255, 171, 64, 0.12)')
+              : 'rgba(255,255,255,0.03)',
+            borderRadius: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center',
+            border: activeRound
+              ? (submittedCount === nonHostPlayers.length ? '1px solid rgba(0, 230, 118, 0.4)' : '1px solid rgba(255, 171, 64, 0.4)')
+              : '1px solid transparent',
+            transition: 'all 0.3s ease'
+          }}>
+            <Typography variant="caption" sx={{
+              display: 'block', fontSize: { xs: '0.6rem', sm: '0.75rem' }, lineHeight: 1.2,
+              color: activeRound ? (submittedCount === nonHostPlayers.length ? '#00e676' : '#ffab40') : 'text.secondary',
+              fontWeight: activeRound ? 600 : 400
+            }}>
+              {activeRound ? 'Đã chọn' : 'Người chơi'}
+            </Typography>
+            <Typography variant="h6" fontWeight={700} sx={{
+              fontSize: { xs: '0.9rem', sm: '1.25rem' }, mt: 0.5,
+              color: activeRound ? (submittedCount === nonHostPlayers.length ? '#00e676' : '#ffab40') : 'text.primary'
+            }}>
+              {activeRound ? `${submittedCount}/${nonHostPlayers.length}` : activePlayers.length}
+            </Typography>
+          </Paper>
 
-      {/* Active Round Banner — info only, no action buttons */}
-      {activeRound && (
-        <Paper
-          sx={{
-            p: 2,
-            mb: 3,
-            mx: { xs: -1.5, sm: 0 },
-            borderRadius: { xs: 0, sm: 2 },
-            background: 'linear-gradient(135deg, rgba(124, 77, 255, 0.12), rgba(0, 229, 255, 0.08))',
-            border: '1px solid rgba(124, 77, 255, 0.3)',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PlayArrowIcon color="primary" fontSize="small" />
-              <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                Ván {activeRound.round_number}
-              </Typography>
-              <Chip
-                icon={<StarIcon sx={{ fontSize: '0.9rem !important' }} />}
-                label={`Host: ${activeRound.host_name}`}
-                size="small"
-                sx={{ bgcolor: 'rgba(255, 171, 64, 0.15)', color: '#ffab40', height: 24, fontSize: '0.75rem' }}
-              />
-            </Box>
-            <Chip
-              label={`${submittedCount}/${nonHostPlayers.length} đã chọn`}
-              size="small"
-              sx={{
-                height: 28, fontWeight: 700, fontSize: '0.75rem',
-                bgcolor: submittedCount === nonHostPlayers.length
-                  ? 'rgba(0, 230, 118, 0.15)'
-                  : 'rgba(255, 171, 64, 0.12)',
-                color: submittedCount === nonHostPlayers.length ? '#00e676' : '#ffab40',
-              }}
-            />
-          </Box>
-        </Paper>
-      )}
+          {/* Host hiện tại */}
+          <Paper sx={{ p: { xs: 0.75, sm: 1.5 }, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: { xs: '0.6rem', sm: '0.75rem' }, lineHeight: 1.2 }}>Host</Typography>
+            <Typography variant="h6" fontWeight={700} noWrap sx={{ fontSize: { xs: '0.9rem', sm: '1.25rem' }, mt: 0.5 }}>
+              {currentHostName || 'Chưa chọn'}
+            </Typography>
+          </Paper>
 
-      {/* History Button */}
-      <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
-        <Button
-          variant="text"
-          size="small"
-          startIcon={<HistoryIcon />}
-          onClick={() => setShowHistory(!showHistory)}
-        >
-          {showHistory ? 'Ẩn lịch sử' : 'Lịch sử'}
-        </Button>
+          {/* Lịch sử */}
+          <Paper
+            onClick={() => {
+              setShowHistory(!showHistory);
+              if (!showHistory) {
+                setTimeout(() => {
+                  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, 100);
+              }
+            }}
+            sx={{
+              p: { xs: 0.75, sm: 1.5 },
+              textAlign: 'center',
+              bgcolor: showHistory ? 'rgba(0, 229, 255, 0.12)' : 'rgba(255,255,255,0.03)',
+              borderRadius: 2,
+              cursor: 'pointer',
+              border: showHistory ? '1px solid rgba(0, 229, 255, 0.3)' : '1px solid transparent',
+              display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+              transition: 'all 0.2s',
+              userSelect: 'none'
+            }}
+          >
+            <HistoryIcon sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' }, color: showHistory ? '#00e5ff' : 'text.secondary', mb: 0.5 }} />
+            <Typography variant="caption" sx={{ display: 'block', fontSize: { xs: '0.6rem', sm: '0.75rem' }, lineHeight: 1.2, fontWeight: 600, color: showHistory ? '#00e5ff' : 'text.secondary' }}>
+              Lịch sử
+            </Typography>
+          </Paper>
+        </Box>
       </Box>
 
       {/* Players Grid — Spectator layout: 1 col mobile, 2 col desktop */}
