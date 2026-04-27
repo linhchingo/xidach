@@ -35,8 +35,18 @@ export default function SpectatorPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [eventOverlay, setEventOverlay] = useState({ show: false, type: 'start', roundNumber: null });
+  const isFirstRender = useRef(true);
   // Xử lý hiệu ứng bắt đầu ván mới
   useEffect(() => {
+    // Bỏ qua lần render đầu tiên để tránh hiện overlay do cờ hiệu cũ còn sót lại
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      if (isNewRoundStarted) {
+        dispatch(clearNewRoundFlag());
+      }
+      return;
+    }
+
     if (isNewRoundStarted && activeRound) {
       setEventOverlay({ show: true, type: 'start', roundNumber: activeRound.round_number });
 
@@ -64,11 +74,13 @@ export default function SpectatorPage() {
   useEffect(() => {
     dispatch(fetchGame(id));
     dispatch(fetchRounds(id));
+    dispatch(clearNewRoundFlag()); // Xóa cờ khi vừa vào trang
 
     return () => {
       dispatch({ type: 'games/clearCurrentGame' });
       dispatch({ type: 'games/clearError' });
       dispatch({ type: 'rounds/clearActiveRound' });
+      dispatch(clearNewRoundFlag()); // Xóa cờ khi rời khỏi trang
     };
   }, [dispatch, id]);
 

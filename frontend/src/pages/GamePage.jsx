@@ -17,7 +17,7 @@ import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import { toast } from 'react-toastify';
 
 import { fetchGame } from '../store/gamesSlice';
-import { startRound, submitResult, endRound, cancelRound, changeHost, fetchRounds } from '../store/roundsSlice';
+import { startRound, submitResult, endRound, cancelRound, changeHost, fetchRounds, clearNewRoundFlag } from '../store/roundsSlice';
 import { endGame, removePlayer, addPlayer } from '../store/gamesSlice';
 import PlayerCard from '../components/PlayerCard';
 import AddPlayerDialog from '../components/AddPlayerDialog';
@@ -75,6 +75,7 @@ export default function GamePage() {
       dispatch({ type: 'games/clearCurrentGame' });
       dispatch({ type: 'games/clearError' });
       dispatch({ type: 'rounds/clearActiveRound' });
+      dispatch(clearNewRoundFlag()); // Xóa cờ khi rời khỏi trang
     };
   }, [dispatch, id]);
 

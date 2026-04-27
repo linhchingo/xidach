@@ -26,6 +26,7 @@ import RoleSelectDialog from '../components/RoleSelectDialog';
 import PinVerifyDialog from '../components/PinVerifyDialog';
 import LoadingScreen from '../components/LoadingScreen';
 import { fetchGames, setFilters, deleteGame } from '../store/gamesSlice';
+import { clearNewRoundFlag } from '../store/roundsSlice';
 
 export default function HomePage() {
   const dispatch = useDispatch();
@@ -43,6 +44,7 @@ export default function HomePage() {
   // Load games on mount
   useEffect(() => {
     dispatch(fetchGames());
+    dispatch(clearNewRoundFlag()); // Xoá cờ hiệu ván mới khi về trang chủ
   }, [dispatch]);
 
   // Handle manual scroll restoration after data loads
