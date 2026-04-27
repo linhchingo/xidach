@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -14,25 +14,40 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import StopIcon from '@mui/icons-material/Stop';
 
 import { fetchGame } from '../store/gamesSlice';
-import { fetchRounds } from '../store/roundsSlice';
+import { fetchRounds, clearNewRoundFlag } from '../store/roundsSlice';
 import SpectatorPlayerCard from '../components/SpectatorPlayerCard';
 import RoundHistory from '../components/RoundHistory';
 import PlayerHistoryDialog from '../components/PlayerHistoryDialog';
 import LoadingScreen from '../components/LoadingScreen';
 import NotFoundPage from './NotFoundPage';
 import useGameSocket from '../hooks/useGameSocket.js';
+import GameEventOverlay from '../components/GameEventOverlay';
 
 export default function SpectatorPage() {
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { currentGame, loading, error } = useSelector((state) => state.games);
-  const { activeRound, roundHistory } = useSelector((state) => state.rounds);
+  const { activeRound, roundHistory, isNewRoundStarted } = useSelector((state) => state.rounds);
 
   const [showHistory, setShowHistory] = useState(false);
   const [historyPlayer, setHistoryPlayer] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
+  const [eventOverlay, setEventOverlay] = useState({ show: false, type: 'start', roundNumber: null });
+  // Xử lý hiệu ứng bắt đầu ván mới
+  useEffect(() => {
+    if (isNewRoundStarted && activeRound) {
+      setEventOverlay({ show: true, type: 'start', roundNumber: activeRound.round_number });
+
+      const timer = setTimeout(() => {
+        setEventOverlay(prev => ({ ...prev, show: false }));
+        dispatch(clearNewRoundFlag());
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isNewRoundStarted, activeRound, dispatch]);
 
   // Theo dõi cuộn trang để hiển thị thanh tác vụ dính
   useEffect(() => {
@@ -112,6 +127,11 @@ export default function SpectatorPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 3 }, overflowX: 'hidden' }}>
+      <GameEventOverlay
+        show={eventOverlay.show}
+        type={eventOverlay.type}
+        roundNumber={eventOverlay.roundNumber}
+      />
       {/* Sticky Action Bar - Hiển thị khi cuộn trang */}
       <Box sx={{
         position: 'fixed',

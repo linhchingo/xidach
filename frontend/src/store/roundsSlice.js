@@ -66,6 +66,7 @@ const roundsSlice = createSlice({
     roundHistory: [],
     loading: false,
     error: null,
+    isNewRoundStarted: false, // Cờ hiệu để kích hoạt overlay ván mới
   },
   reducers: {
     clearActiveRound: (state) => {
@@ -76,6 +77,7 @@ const roundsSlice = createSlice({
     },
     onRoundStarted: (state, action) => {
       state.activeRound = action.payload;
+      state.isNewRoundStarted = true; // Chỉ kích hoạt khi có sự kiện round_started thực tế
     },
     onResultSubmitted: (state, action) => {
       if (state.activeRound) {
@@ -96,6 +98,9 @@ const roundsSlice = createSlice({
     },
     onHostChanged: (state, action) => {
       state.activeRound = action.payload;
+    },
+    clearNewRoundFlag: (state) => {
+      state.isNewRoundStarted = false;
     },
   },
   extraReducers: (builder) => {
@@ -154,6 +159,7 @@ export const {
   onResultSubmitted,
   onRoundEnded,
   onRoundCancelled,
-  onHostChanged
+  onHostChanged,
+  clearNewRoundFlag
 } = roundsSlice.actions;
 export default roundsSlice.reducer;
