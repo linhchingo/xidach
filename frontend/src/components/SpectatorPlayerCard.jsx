@@ -1,9 +1,10 @@
 import React from 'react';
 import {
-  Card, CardContent, Typography, Box, Avatar, Chip
+  Card, CardContent, Typography, Box, Chip
 } from '@mui/material';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import ComicText from './ComicText';
+import PlayerAvatar from './PlayerAvatar';
 
 /**
  * Comic text config for each result type.
@@ -152,16 +153,14 @@ export default function SpectatorPlayerCard({
               zIndex: 2, transform: 'rotate(-10deg)'
             }} />
           )}
-          <Avatar
+          <PlayerAvatar
+            name={player.name}
             onClick={() => onShowHistory && onShowHistory(player)}
-            src={`https://i.pravatar.cc/150?u=${player.name}-${player.id}`}
             sx={{
               width: { xs: 36, sm: 44 }, height: { xs: 36, sm: 44 },
               border: isHost && isActive ? '2px solid #FFD700' : '1px solid rgba(255,255,255,0.1)',
             }}
-          >
-            {player.name.charAt(0).toUpperCase()}
-          </Avatar>
+          />
           <Box
             onClick={() => onShowHistory && onShowHistory(player)}
             sx={{ minWidth: 0 }}

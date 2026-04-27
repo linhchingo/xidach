@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, Typography, Box, Avatar, Checkbox, FormControlLabel, Divider, Chip
+  Button, Typography, Box, Checkbox, FormControlLabel, Divider, Chip
 } from '@mui/material';
 import BoltIcon from '@mui/icons-material/Bolt';
+import PlayerAvatar from './PlayerAvatar';
 
 export default function BigWinDialog({ open, onClose, onConfirm, eligiblePlayers }) {
   const [selectedIds, setSelectedIds] = useState([]);
@@ -69,12 +70,10 @@ export default function BigWinDialog({ open, onClose, onConfirm, eligiblePlayers
                     onClick={(e) => e.stopPropagation()}
                     sx={{ p: 0 }}
                   />
-                  <Avatar
-                    src={`https://i.pravatar.cc/150?u=${player.name}-${player.id}`}
+                  <PlayerAvatar
+                    name={player.name}
                     sx={{ width: 32, height: 32, border: '1px solid rgba(255,255,255,0.1)' }}
-                  >
-                    {player.name.charAt(0).toUpperCase()}
-                  </Avatar>
+                  />
                   <Typography variant="body2" fontWeight={600} sx={{ flex: 1 }}>
                     {player.name}
                   </Typography>

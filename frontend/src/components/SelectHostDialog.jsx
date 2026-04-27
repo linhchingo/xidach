@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, RadioGroup, FormControlLabel, Radio, Typography, Box, Avatar
+  Button, RadioGroup, FormControlLabel, Radio, Typography, Box
 } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
+import PlayerAvatar from './PlayerAvatar';
 
 export default function SelectHostDialog({ open, onClose, players, onSelectHost, currentHostId }) {
   const [selectedHost, setSelectedHost] = useState(String(currentHostId || ''));
@@ -39,17 +40,15 @@ export default function SelectHostDialog({ open, onClose, players, onSelectHost,
               control={<Radio />}
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Avatar
-                    src={`https://i.pravatar.cc/150?u=${player.name}-${player.id}`}
+                  <PlayerAvatar
+                    name={player.name}
                     sx={{ 
                       mr: 2, 
                       width: 40, 
                       height: 40,
                       border: '1px solid rgba(255,255,255,0.1)'
                     }}
-                  >
-                    {player.name.charAt(0).toUpperCase()}
-                  </Avatar>
+                  />
                   <Typography>{player.name}</Typography>
                   <Typography variant="caption" color="text.secondary">
                     ({player.total_points > 0 ? '+' : ''}{player.total_points} điểm)

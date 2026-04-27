@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Typography, Box, Avatar, Chip, IconButton, Divider
+  Paper, Typography, Box, Chip, IconButton, Divider
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -11,6 +11,7 @@ import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import PaymentIcon from '@mui/icons-material/Payment';
 import StarIcon from '@mui/icons-material/Star';
 import BoltIcon from '@mui/icons-material/Bolt';
+import PlayerAvatar from './PlayerAvatar';
 
 // Cấu hình hiển thị kết quả giống như trong RoundHistory
 const resultConfig = {
@@ -63,12 +64,10 @@ export default function PlayerHistoryDialog({ open, onClose, player, rounds }) {
     >
       <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Avatar 
-            src={`https://i.pravatar.cc/150?u=${player.name}-${player.id}`}
+          <PlayerAvatar 
+            name={player.name}
             sx={{ border: '2px solid primary.main' }}
-          >
-            {player.name.charAt(0).toUpperCase()}
-          </Avatar>
+          />
           <Box>
             <Typography variant="h6" fontWeight={700}>{player.name}</Typography>
             <Typography variant="caption" color="text.secondary">Lịch sử cuộc chơi</Typography>

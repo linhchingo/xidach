@@ -1,12 +1,13 @@
 import React from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Chip, Avatar
+  TableHead, TableRow, Paper, Chip
 } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import RemoveIcon from '@mui/icons-material/Remove';
+import PlayerAvatar from './PlayerAvatar';
 
 export default function GameStats({ statistics, moneyPerPoint, onPlayerClick }) {
   if (!statistics || statistics.length === 0) {
@@ -66,8 +67,8 @@ export default function GameStats({ statistics, moneyPerPoint, onPlayerClick }) 
                 </TableCell>
                 <TableCell sx={{ px: { xs: 1, sm: 2 } }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
-                    <Avatar
-                      src={`https://i.pravatar.cc/150?u=${stat.player_name}-${stat.player_id}`}
+                    <PlayerAvatar
+                      name={stat.player_name}
                       sx={{ 
                         width: { xs: 24, sm: 32 }, 
                         height: { xs: 24, sm: 32 }, 
@@ -75,9 +76,7 @@ export default function GameStats({ statistics, moneyPerPoint, onPlayerClick }) 
                         fontWeight: 700,
                         border: '1px solid rgba(255,255,255,0.1)'
                       }}
-                    >
-                      {stat.player_name.charAt(0).toUpperCase()}
-                    </Avatar>
+                    />
                     <Typography fontWeight={600} noWrap sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, maxWidth: { xs: 80, sm: 'none' } }}>
                       {stat.player_name}
                     </Typography>

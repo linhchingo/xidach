@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Card, CardContent, Typography, Box, Avatar, Chip, Button, Tooltip, IconButton
+  Card, CardContent, Typography, Box, Chip, Button, Tooltip, IconButton
 } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import HandshakeIcon from '@mui/icons-material/Handshake';
@@ -10,6 +10,7 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import BoltIcon from '@mui/icons-material/Bolt';
+import PlayerAvatar from './PlayerAvatar';
 
 const resultConfig = {
   win: { label: 'Thắng', color: 'success', icon: <EmojiEventsIcon fontSize="small" /> },
@@ -127,15 +128,13 @@ export default function PlayerCard({
               zIndex: 2, transform: 'rotate(-10deg)'
             }} />
           )}
-          <Avatar
-            src={`https://i.pravatar.cc/150?u=${player.name}-${player.id}`}
+          <PlayerAvatar
+            name={player.name}
             sx={{
               width: { xs: 36, sm: 44 }, height: { xs: 36, sm: 44 },
               border: isHost && isActive ? '2px solid #FFD700' : '1px solid rgba(255,255,255,0.1)',
             }}
-          >
-            {player.name.charAt(0).toUpperCase()}
-          </Avatar>
+          />
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               variant="subtitle2" fontWeight={700} noWrap
