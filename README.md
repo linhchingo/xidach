@@ -5,8 +5,8 @@
 ## 🚀 Các Công Nghệ Sử Dụng
 
 - **Frontend**: React (Vite), Material-UI (MUI), Redux Toolkit, Axios, React Router, React Toastify.
-- **Backend**: Python, Flask, SQLite.
-- **Infrastructure**: Docker, Docker Compose, Nginx (Reverse Proxy).
+- **Backend**: Python, Flask, SQLite, Socket.IO.
+- **Infrastructure**: Docker, Docker Compose, Nginx (Reverse Proxy), Redis.
 - **Quản lý Phiên bản**: Git (Monorepo chứa cả `frontend` và `backend`).
 
 ## 📁 Cấu Trúc Dự Án
@@ -41,7 +41,13 @@ docker-compose up -d --build
 
 ### 3. Khởi Chạy Local Để Phát Triển (Development)
 
-Trong trường hợp bạn muốn chỉnh sửa code và xem thay đổi ngay không qua Docker:
+Trong trường hợp bạn muốn chỉnh sửa code và xem thay đổi ngay không qua Docker, **bạn vẫn cần chạy Redis** để hệ thống thời gian thực (Socket.IO) hoạt động:
+
+**Khởi Động Redis Local (Bắt buộc - Port 6380):**
+Vì backend local được cấu hình kết nối tới `redis://localhost:6380`, bạn cần khởi chạy một instance Redis trên port này. Chạy bằng Docker là cách nhanh nhất:
+```bash
+docker run -d --name xidach-redis-local -p 6380:6379 redis:7-alpine
+```
 
 **Khởi Động Backend (Port mặc định thường là 5000):**
 ```bash
@@ -61,6 +67,7 @@ npm run dev
 ```
 
 ## 🌟 Tính Năng Chính
+- **Đồng bộ Thời Gian Thực**: Cập nhật dữ liệu điểm số, trạng thái ván đấu tức thời (Real-time) qua Socket.IO và Redis, loại bỏ tình trạng giật lag giao diện.
 - **Quản lý ván đấu**: Thêm bàn chơi, bắt đầu ghi nhận điểm số từng ván. Tự động bắt đầu vòng đấu và xử lý các kết quả còn thiếu.
 - **Quản lý người chơi**: Thêm/sửa người chơi tham gia vào các bàn đánh Xì Dách. Hỗ trợ thay đổi nhà cái (Host) giữa ván đấu.
 - **Tính toán kết quả**: Tự động tổng hợp điểm cho từng ván dựa trên kết quả Thắng/Thua và hệ số nhân điểm (như x2).
