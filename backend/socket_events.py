@@ -139,3 +139,96 @@ def register_events(socketio):
 
         if state:
             emit('game_state_sync', state)
+
+    @socketio.on('submit_result')
+    def handle_submit_result(data):
+        """Submit a player's result for a round via Socket.IO."""
+        if not data:
+            return {'error': 'Dữ liệu không hợp lệ'}
+
+        round_id = data.get('round_id')
+        player_id = data.get('player_id')
+        result = data.get('result')
+
+        if not round_id or not player_id:
+            return {'error': 'Thiếu round_id hoặc player_id'}
+        if result and result not in ('win', 'draw', 'lose', 'pay', 'win_big', 'lose_big'):
+            return {'error': 'Kết quả không hợp lệ'}
+
+        r = get_redis()
+        game_id = r.hget('active_rounds_map', round_id)
+        rnd = None
+        player = None
+
+        if game_id:
+            game_id = int(game_id)
+            state = get_cached_game_state(game_id)
+            if state and state.get('active_round') and state['active_round']['id'] == round_id:
+                rnd = state['active_round']
+                player = next((p for p in state['players'] if p['id'] == player_id and p['is_active']), None)
+                if player:
+                    if player_id == rnd['host_player_id']:
+                        return {'error': 'Host không cần chọn kết quả'}
+                else:
+                    player = None
+
+        db = None
+        if not rnd or not player:
+            db = get_db()
+            try:
+                if not rnd:
+                    rnd = dict_from_row(db.execute('SELECT * FROM rounds WHERE id = ?', (round_id,)).fetchone())
+                    if not rnd:
+                        return {'error': 'Ván chơi không tồn tại'}
+                    if rnd['status'] != 'active':
+                        return {'error': 'Ván chơi đã kết thúc hoặc bị huỷ'}
+                    game_id = rnd['game_id']
+                    r.hset('active_rounds_map', rnd['id'], game_id)
+
+                if not player:
+                    player = dict_from_row(
+                        db.execute('SELECT * FROM players WHERE id = ? AND game_id = ? AND is_active = 1', (player_id, game_id)).fetchone()
+                    )
+                    if not player:
+                        return {'error': 'Người chơi không tồn tại hoặc đã bị loại'}
+                    if player_id == rnd['host_player_id']:
+                        return {'error': 'Host không cần chọn kết quả'}
+            finally:
+                if db: db.close()
+
+        try:
+            redis_key = f'round:{round_id}:results'
+            if not result:
+                r.hdel(redis_key, player_id)
+            else:
+                r.hset(redis_key, player_id, result)
+
+            redis_results = r.hgetall(redis_key)
+            state = get_cached_game_state(rnd['game_id'])
+            
+            if not state:
+                state = build_game_state(rnd['game_id'])
+                if state:
+                    cache_game_state(rnd['game_id'], state)
+
+            players_map = {p['id']: p['name'] for p in state['players']} if state else {}
+            results = []
+            for pid_str, res in redis_results.items():
+                pid = int(pid_str)
+                results.append({
+                    'player_id': pid,
+                    'result': res,
+                    'player_name': players_map.get(pid, 'Unknown'),
+                    'round_id': round_id,
+                    'points_change': 0
+                })
+
+            if state and state.get('active_round') and state['active_round']['id'] == round_id:
+                state['active_round']['results'] = results
+                cache_game_state(rnd['game_id'], state)
+
+            emit('result_submitted', {'results': results, 'player_id': player_id}, room=f'game:{rnd["game_id"]}')
+            return {'success': True, 'results': results}
+        finally:
+            if db:
+                db.close()

@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../api/axios';
 import { removePlayer } from './gamesSlice';
+import socket from '../socket/socketClient';
 
 export const startRound = createAsyncThunk('rounds/startRound', async ({ gameId, hostPlayerId }, { rejectWithValue }) => {
   try {
@@ -12,12 +13,17 @@ export const startRound = createAsyncThunk('rounds/startRound', async ({ gameId,
 });
 
 export const submitResult = createAsyncThunk('rounds/submitResult', async ({ roundId, playerId, result }, { rejectWithValue }) => {
-  try {
-    const res = await api.put(`/rounds/${roundId}/result`, { player_id: playerId, result });
-    return res.data;
-  } catch (err) {
-    return rejectWithValue(err.response?.data || { error: 'Lỗi ghi nhận kết quả' });
-  }
+  return new Promise((resolve, reject) => {
+    socket.emit('submit_result', { round_id: roundId, player_id: playerId, result }, (response) => {
+      if (response && response.error) {
+        reject(rejectWithValue({ error: response.error }));
+      } else if (response && response.success) {
+        resolve(response);
+      } else {
+        reject(rejectWithValue({ error: 'Không nhận được phản hồi từ server' }));
+      }
+    });
+  });
 });
 
 export const endRound = createAsyncThunk('rounds/endRound', async ({ roundId, defaultLosers = [] }, { rejectWithValue }) => {
