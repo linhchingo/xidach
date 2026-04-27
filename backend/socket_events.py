@@ -31,6 +31,23 @@ def build_game_state(game_id):
         active_round = None
         round_history = []
 
+        # Tối ưu N+1 Query: Lấy tất cả kết quả của các ván trước trong 1 câu query
+        all_results = dicts_from_rows(
+            db.execute(
+                '''SELECT rr.*, p.name as player_name
+                   FROM round_results rr
+                   JOIN players p ON rr.player_id = p.id
+                   JOIN rounds r ON rr.round_id = r.id
+                   WHERE r.game_id = ?''',
+                (game_id,)
+            ).fetchall()
+        )
+        results_by_round = {}
+        for res in all_results:
+            results_by_round.setdefault(res['round_id'], []).append(res)
+
+        players_dict = {p['id']: p['name'] for p in players}
+
         for rnd in rounds:
             if rnd['status'] == 'active':
                 r = get_redis()
@@ -38,31 +55,18 @@ def build_game_state(game_id):
                 results = []
                 for pid_str, res in redis_results.items():
                     pid = int(pid_str)
-                    player_name = next((p['name'] for p in players if p['id'] == pid), 'Unknown')
                     results.append({
                         'player_id': pid,
                         'result': res,
-                        'player_name': player_name,
+                        'player_name': players_dict.get(pid, 'Unknown'),
                         'round_id': rnd['id'],
                         'points_change': 0
                     })
                 rnd['results'] = results
             else:
-                results = dicts_from_rows(
-                    db.execute(
-                        '''SELECT rr.*, p.name as player_name
-                           FROM round_results rr
-                           JOIN players p ON rr.player_id = p.id
-                           WHERE rr.round_id = ?''',
-                        (rnd['id'],)
-                    ).fetchall()
-                )
-                rnd['results'] = results
+                rnd['results'] = results_by_round.get(rnd['id'], [])
 
-            host = dict_from_row(
-                db.execute('SELECT name FROM players WHERE id = ?', (rnd['host_player_id'],)).fetchone()
-            )
-            rnd['host_name'] = host['name'] if host else 'Unknown'
+            rnd['host_name'] = players_dict.get(rnd['host_player_id'], 'Unknown')
 
             if rnd['status'] == 'active':
                 active_round = rnd

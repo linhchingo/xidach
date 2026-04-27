@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from models import get_db, dict_from_row, dicts_from_rows
 from extensions import socketio
 from redis_cache import refresh_game_cache, get_redis, get_cached_game_state, cache_game_state
+from socket_events import build_game_state
 
 rounds_bp = Blueprint('rounds', __name__)
 
@@ -152,7 +153,6 @@ def submit_result(round_id):
         state = get_cached_game_state(rnd['game_id'])
         if not state:
             # Fallback if cache missing
-            from socket_events import build_game_state
             state = build_game_state(rnd['game_id'])
             if state:
                 cache_game_state(rnd['game_id'], state)
