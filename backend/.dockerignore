@@ -12,6 +12,7 @@ dist/
 .vscode/
 .idea/
 *.db
+!data/xidach_prod.db
 *.sqlite3
 .git/
 .gitignore

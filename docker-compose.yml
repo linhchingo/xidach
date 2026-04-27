@@ -7,19 +7,17 @@ services:
     # Removed direct port mapping for security
     volumes:
       - ./backend:/app
-      # Ensure database is persisted on host
-      - backend-data:/app/data
     environment:
       - FLASK_ENV=production
       - REDIS_URL=redis://redis:6379
     depends_on:
       - redis
-    restart: always
+    restart: no
 
   redis:
     image: redis:7-alpine
     container_name: xidach-redis
-    restart: always
+    restart: no
 
   frontend:
     build:
@@ -29,7 +27,7 @@ services:
     # Removed direct port mapping, accessed via proxy
     depends_on:
       - backend
-    restart: always
+    restart: no
 
   proxy:
     image: nginx:alpine
@@ -41,7 +39,5 @@ services:
     depends_on:
       - frontend
       - backend
-    restart: always
+    restart: no
 
-volumes:
-  backend-data:

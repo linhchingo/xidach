@@ -1,7 +1,18 @@
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'xidach.db')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, 'data')
+
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR)
+
+FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
+
+if FLASK_ENV == 'production':
+    DB_PATH = os.path.join(DATA_DIR, 'xidach_prod.db')
+else:
+    DB_PATH = os.path.join(BASE_DIR, 'xidach_dev.db')
 
 
 def get_db():
