@@ -60,7 +60,7 @@ export default function GamePage() {
   // Track scroll to show/hide sticky action bar
   useEffect(() => {
     const handleScroll = () => {
-      setShowStickyBar(window.scrollY > 460);
+      setShowStickyBar(window.scrollY > 250);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -512,7 +512,7 @@ export default function GamePage() {
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid xs={6} sm={3}>
             <Paper sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Ván chơi</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Đã chơi</Typography>
               <Typography variant="h6" fontWeight={700}>{roundHistory.length}</Typography>
             </Paper>
           </Grid>
@@ -585,7 +585,19 @@ export default function GamePage() {
                   sx={{ bgcolor: 'rgba(255, 171, 64, 0.15)', color: '#ffab40', height: 24, fontSize: '0.75rem' }}
                 />
               </Box>
-              <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'flex-end', sm: 'flex-start' }, flexWrap: 'wrap' }}>
+              <Box sx={{
+                display: 'flex', gap: { xs: 0.5, sm: 1 }, width: { xs: '100%', sm: 'auto' },
+                justifyContent: { xs: 'space-between', sm: 'flex-end' },
+                flexWrap: 'nowrap', alignItems: 'center',
+                '& .MuiButton-root': {
+                  flex: { xs: '1 1 auto', sm: 'initial' },
+                  minWidth: 0,
+                  px: { xs: 0.75, sm: 1.5 },
+                  fontSize: { xs: '0.65rem', sm: '0.8125rem' },
+                  whiteSpace: 'nowrap',
+                  '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 1 } }
+                }
+              }}>
                 <Tooltip
                   title={!allNonHostSubmitted ? 'Một số người chơi chưa chọn — nhấn để kết thúc sớm' : 'Tất cả đã chọn xong!'}
                   placement="top"
@@ -659,11 +671,23 @@ export default function GamePage() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <DoDisturbAltIcon color="error" fontSize="small" />
                   <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1rem', sm: '1.25rem' }, color: 'error.main' }}>
-                    Chờ đợi cần thêm người chơi
+                    Cần thêm người chơi
                   </Typography>
                 </Box>
               }
-              <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'flex-end', sm: 'flex-start' }, flexWrap: 'wrap' }}>
+              <Box sx={{
+                display: 'flex', gap: { xs: 0.5, sm: 1 }, width: { xs: '100%', sm: 'auto' },
+                justifyContent: { xs: 'space-between', sm: 'flex-end' },
+                flexWrap: 'nowrap', alignItems: 'center',
+                '& .MuiButton-root': {
+                  flex: { xs: '1 1 auto', sm: 'initial' },
+                  minWidth: 0,
+                  px: { xs: 0.75, sm: 1.5 },
+                  fontSize: { xs: '0.65rem', sm: '0.8125rem' },
+                  whiteSpace: 'nowrap',
+                  '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 1 } }
+                }
+              }}>
                 <Button
                   variant="contained"
                   size="small"
@@ -702,7 +726,7 @@ export default function GamePage() {
 
       {/* Players Grid */}
       <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-        Người chơi ({players.length})
+        Người chơi ({activePlayers.length})
       </Typography>
       <Box sx={{
         display: 'grid',

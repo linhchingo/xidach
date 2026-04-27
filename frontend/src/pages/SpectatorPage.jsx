@@ -62,7 +62,7 @@ export default function SpectatorPage() {
   // Theo dõi cuộn trang để hiển thị thanh tác vụ dính
   useEffect(() => {
     const handleScroll = () => {
-      setShowStickyBar(window.scrollY > 300);
+      setShowStickyBar(window.scrollY > 100);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
