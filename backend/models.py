@@ -96,3 +96,36 @@ def dict_from_row(row):
 def dicts_from_rows(rows):
     """Convert a list of sqlite3.Row to a list of dictionaries."""
     return [dict(row) for row in rows]
+
+
+def calculate_player_streaks(db, game_id):
+    """Tính toán chuỗi thắng/thua (Streak) cho toàn bộ người chơi trong game."""
+    streak_data = db.execute('''
+        WITH player_rounds AS (
+            SELECT 
+                rr.player_id,
+                rr.points_change,
+                ROW_NUMBER() OVER (PARTITION BY rr.player_id ORDER BY r.round_number DESC) as rn
+            FROM round_results rr
+            JOIN rounds r ON rr.round_id = r.id
+            WHERE r.game_id = ? AND r.status = 'completed'
+        ),
+        stats AS (
+            SELECT 
+                player_id,
+                SUM(CASE WHEN points_change > 0 THEN 1 ELSE 0 END) as wins,
+                SUM(CASE WHEN points_change < 0 THEN 1 ELSE 0 END) as losses
+            FROM player_rounds
+            WHERE rn <= 10
+            GROUP BY player_id
+        )
+        SELECT player_id, wins, losses FROM stats
+    ''', (game_id,)).fetchall()
+    
+    streaks = {}
+    for s in streak_data:
+        streaks[s['player_id']] = {
+            'is_winning_lot': s['wins'] >= 7,
+            'is_losing_lot': s['losses'] >= 7
+        }
+    return streaks

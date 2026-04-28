@@ -1,6 +1,6 @@
 import re
 from flask import Blueprint, request, jsonify
-from models import get_db, dict_from_row, dicts_from_rows
+from models import get_db, dict_from_row, dicts_from_rows, calculate_player_streaks
 from extensions import socketio
 from redis_cache import refresh_game_cache, invalidate_game_cache
 
@@ -96,6 +96,14 @@ def get_game(game_id):
         players = dicts_from_rows(
             db.execute('SELECT * FROM players WHERE game_id = ? ORDER BY joined_at', (game_id,)).fetchall()
         )
+
+        # Tính toán chuỗi thắng/thua (Streak)
+        streaks = calculate_player_streaks(db, game_id)
+
+        for p in players:
+            p_streak = streaks.get(p['id'], {'is_winning_lot': False, 'is_losing_lot': False})
+            p['is_winning_lot'] = p_streak['is_winning_lot']
+            p['is_losing_lot'] = p_streak['is_losing_lot']
 
         # Get rounds with results
         rounds = dicts_from_rows(

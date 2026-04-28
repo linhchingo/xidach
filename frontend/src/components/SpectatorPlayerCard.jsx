@@ -3,6 +3,8 @@ import {
   Card, CardContent, Typography, Box, Chip
 } from '@mui/material';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import WhatshotIcon from '@mui/icons-material/Whatshot';
+import HeartBrokenIcon from '@mui/icons-material/HeartBroken';
 import ComicText from './ComicText';
 import PlayerAvatar from './PlayerAvatar';
 
@@ -35,6 +37,9 @@ export default function SpectatorPlayerCard({
   player, isHost, roundActive, currentResult,
   moneyPerPoint, roundsPlayed, onShowHistory
 }) {
+  const isWinningLot = player.is_winning_lot;
+  const isLosingLot = player.is_losing_lot;
+
   const points = player.total_points;
   const money = Math.abs(points) * (moneyPerPoint || 0);
   const isActive = player.is_active !== 0;
@@ -71,13 +76,19 @@ export default function SpectatorPlayerCard({
         transition: 'all 0.3s ease',
         opacity: isActive ? 1 : 0.6,
         filter: isActive ? 'none' : 'grayscale(0.5)',
+        animation: isWinningLot && isActive
+          ? 'hotStreak 2s infinite'
+          : (isLosingLot && isActive ? 'lostTooMuch 5s infinite' : 'none'),
+        zIndex: isWinningLot ? 10 : 1,
         '@media (hover: hover)': {
           '&:hover': isActive ? {
             transform: 'translateY(-4px)',
-            boxShadow: currentResult ? (
-              currentResult.includes('win') ? '0 8px 25px rgba(76, 175, 80, 0.25)' :
-                currentResult.includes('lose') ? '0 8px 25px rgba(255, 82, 82, 0.25)' : '0 8px 25px rgba(0,0,0,0.2)'
-            ) : '0 8px 25px rgba(0,0,0,0.2)',
+            boxShadow: isWinningLot
+              ? '0 12px 40px rgba(255, 152, 0, 0.4)'
+              : (currentResult ? (
+                currentResult.includes('win') ? '0 8px 25px rgba(76, 175, 80, 0.25)' :
+                  currentResult.includes('lose') ? '0 8px 25px rgba(255, 82, 82, 0.25)' : '0 8px 25px rgba(0,0,0,0.2)'
+              ) : '0 8px 25px rgba(0,0,0,0.2)'),
           } : {}
         }
       }}
@@ -171,10 +182,15 @@ export default function SpectatorPlayerCard({
               variant="subtitle2" fontWeight={700} noWrap
               sx={{
                 lineHeight: 1.2, fontSize: { xs: '0.85rem', sm: '1rem' },
-                textDecoration: isActive ? 'none' : 'line-through'
+                textDecoration: isActive ? 'none' : 'line-through',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5
               }}
             >
               {player.name}{!isActive && ' (Rời đi)'}
+              {isWinningLot && isActive && <WhatshotIcon sx={{ color: '#ff9800', fontSize: '1.1rem' }} />}
+              {isLosingLot && isActive && <HeartBrokenIcon sx={{ color: '#ff5252', fontSize: '1.1rem' }} />}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block' }}>
               Số ván: {roundsPlayed || 0}

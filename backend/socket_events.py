@@ -4,7 +4,7 @@ Quản lý kết nối, room, và state sync cho real-time game updates.
 """
 from flask import request
 from flask_socketio import join_room, leave_room, emit
-from models import get_db, dict_from_row, dicts_from_rows
+from models import get_db, dict_from_row, dicts_from_rows, calculate_player_streaks
 from redis_cache import get_cached_game_state, cache_game_state, get_redis
 
 
@@ -72,6 +72,15 @@ def build_game_state(game_id):
                 active_round = rnd
             else:
                 round_history.append(rnd)
+
+        # Tính toán chuỗi thắng/thua (Streak) - sử dụng duy nhất 1 query
+        streaks = calculate_player_streaks(db, game_id)
+
+        # Gắn dữ liệu streak vào danh sách players
+        for p in players:
+            player_streak = streaks.get(p['id'], {'is_winning_lot': False, 'is_losing_lot': False})
+            p['is_winning_lot'] = player_streak['is_winning_lot']
+            p['is_losing_lot'] = player_streak['is_losing_lot']
 
         return {
             'game': game,
