@@ -5,7 +5,7 @@ Quản lý kết nối, room, và state sync cho real-time game updates.
 from flask import request
 from flask_socketio import join_room, leave_room, emit
 from models import get_db, dict_from_row, dicts_from_rows, calculate_player_streaks
-from redis_cache import get_cached_game_state, cache_game_state, get_redis
+from redis_cache import get_cached_game_state, cache_game_state, get_redis, get_active_round_results
 
 
 def build_game_state(game_id):
@@ -50,19 +50,7 @@ def build_game_state(game_id):
 
         for rnd in rounds:
             if rnd['status'] == 'active':
-                r = get_redis()
-                redis_results = r.hgetall(f"round:{rnd['id']}:results")
-                results = []
-                for pid_str, res in redis_results.items():
-                    pid = int(pid_str)
-                    results.append({
-                        'player_id': pid,
-                        'result': res,
-                        'player_name': players_dict.get(pid, 'Unknown'),
-                        'round_id': rnd['id'],
-                        'points_change': 0
-                    })
-                rnd['results'] = results
+                rnd['results'] = get_active_round_results(rnd['id'], players_dict)
             else:
                 rnd['results'] = results_by_round.get(rnd['id'], [])
 
@@ -132,22 +120,6 @@ def register_events(socketio):
         if game_id:
             leave_room(f'game:{game_id}')
             print(f'[Socket.IO] {request.sid} left room game:{game_id}')
-
-    @socketio.on('request_state')
-    def handle_request_state(data):
-        """Client yêu cầu full state (reconnect)."""
-        game_id = data.get('game_id')
-        if not game_id:
-            return
-
-        state = get_cached_game_state(game_id)
-        if not state:
-            state = build_game_state(game_id)
-            if state:
-                cache_game_state(game_id, state)
-
-        if state:
-            emit('game_state_sync', state)
 
     @socketio.on('submit_result')
     def handle_submit_result(data):

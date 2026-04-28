@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import get_db, dict_from_row, dicts_from_rows, calculate_player_streaks
 from extensions import socketio
-from redis_cache import refresh_game_cache, get_redis, get_cached_game_state, cache_game_state
+from redis_cache import refresh_game_cache, get_redis, get_cached_game_state, cache_game_state, get_active_round_results
 from socket_events import build_game_state
 
 rounds_bp = Blueprint('rounds', __name__)
@@ -337,21 +337,13 @@ def get_rounds(game_id):
             db.execute('SELECT * FROM rounds WHERE game_id = ? ORDER BY round_number', (game_id,)).fetchall()
         )
 
+        # Prepare players_dict for efficient lookup
+        players = dicts_from_rows(db.execute('SELECT id, name FROM players WHERE game_id = ?', (game_id,)).fetchall())
+        players_dict = {p['id']: p['name'] for p in players}
+
         for rnd in rounds:
             if rnd['status'] == 'active':
-                r = get_redis()
-                redis_results = r.hgetall(f'round:{rnd["id"]}:results')
-                results = []
-                for pid_str, res in redis_results.items():
-                    pid = int(pid_str)
-                    p_name = db.execute('SELECT name FROM players WHERE id = ?', (pid,)).fetchone()
-                    results.append({
-                        'round_id': rnd['id'],
-                        'player_id': pid,
-                        'result': res,
-                        'player_name': p_name['name'] if p_name else 'Unknown',
-                        'points_change': 0
-                    })
+                results = get_active_round_results(rnd['id'], players_dict)
             else:
                 results = dicts_from_rows(
                     db.execute(

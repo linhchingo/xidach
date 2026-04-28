@@ -51,3 +51,20 @@ def refresh_game_cache(game_id):
     if state:
         cache_game_state(game_id, state)
     return state
+
+
+def get_active_round_results(round_id, players_dict):
+    """Lấy kết quả tạm thời từ Redis cho ván đang hoạt động."""
+    r = get_redis()
+    redis_results = r.hgetall(f"round:{round_id}:results")
+    results = []
+    for pid_str, res in redis_results.items():
+        pid = int(pid_str)
+        results.append({
+            'player_id': pid,
+            'result': res,
+            'player_name': players_dict.get(pid, 'Unknown'),
+            'round_id': round_id,
+            'points_change': 0
+        })
+    return results
