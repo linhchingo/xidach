@@ -10,8 +10,8 @@ export default function BigWinDialog({ open, onClose, onConfirm, eligiblePlayers
   const [selectedIds, setSelectedIds] = useState([]);
 
   useEffect(() => {
-    if (open) setSelectedIds([]);
-  }, [open]);
+    if (open) setSelectedIds(eligiblePlayers.map(p => p.id));
+  }, [open, eligiblePlayers]);
 
   const togglePlayer = (id) => {
     setSelectedIds(prev =>
