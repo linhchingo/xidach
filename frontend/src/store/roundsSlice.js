@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../api/axios';
-import { removePlayer } from './gamesSlice';
 import socket from '../socket/socketClient';
 
 export const startRound = createAsyncThunk('rounds/startRound', async ({ gameId, hostPlayerId }, { rejectWithValue }) => {
@@ -105,43 +104,19 @@ const roundsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // startRound
-      .addCase(startRound.fulfilled, (state, action) => {
-        state.activeRound = action.payload;
-      })
-      // submitResult
-      .addCase(submitResult.fulfilled, (state, action) => {
-        if (state.activeRound) {
-          state.activeRound.results = action.payload.results;
-        }
-      })
-      // endRound
-      .addCase(endRound.fulfilled, (state, action) => {
-        state.activeRound = null;
-        // The round is now completed
-      })
-      // cancelRound
-      .addCase(cancelRound.fulfilled, (state) => {
-        state.activeRound = null;
-      })
-      // changeHost
-      .addCase(changeHost.fulfilled, (state, action) => {
-        // Replace activeRound with updated data (new host, empty results)
-        state.activeRound = action.payload;
-      })
-      // fetchRounds
+      // Socket-first: state updates for round mutations are handled by socket events
+      // startRound    → onRoundStarted (socket 'round_started')
+      // submitResult  → onResultSubmitted (socket 'result_submitted')
+      // endRound      → onRoundEnded (socket 'round_ended')
+      // cancelRound   → onRoundCancelled (socket 'round_cancelled')
+      // changeHost    → onHostChanged (socket 'host_changed')
+      // removePlayer  → onPlayerRemoved (socket 'player_removed') in gamesSlice
+
+      // fetchRounds — used by GameResultPage (no socket connection there)
       .addCase(fetchRounds.fulfilled, (state, action) => {
         const rounds = action.payload;
         state.activeRound = rounds.find(r => r.status === 'active') || null;
         state.roundHistory = rounds.filter(r => r.status !== 'active');
-      })
-      // removePlayer (from gamesSlice)
-      .addCase(removePlayer.fulfilled, (state, action) => {
-        if (state.activeRound && state.activeRound.results) {
-          state.activeRound.results = state.activeRound.results.filter(
-            r => r.player_id !== action.payload.playerId
-          );
-        }
       })
       // socket event: syncGameState (from gamesSlice)
       .addCase('games/syncGameState', (state, action) => {

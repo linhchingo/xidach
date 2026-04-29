@@ -13,8 +13,7 @@ import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import StopIcon from '@mui/icons-material/Stop';
 
-import { fetchGame } from '../store/gamesSlice';
-import { fetchRounds, clearNewRoundFlag } from '../store/roundsSlice';
+import { clearNewRoundFlag } from '../store/roundsSlice';
 import SpectatorPlayerCard from '../components/SpectatorPlayerCard';
 import RoundHistory from '../components/RoundHistory';
 import PlayerHistoryDialog from '../components/PlayerHistoryDialog';
@@ -22,6 +21,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import NotFoundPage from './NotFoundPage';
 import useGameSocket from '../hooks/useGameSocket.js';
 import GameEventOverlay from '../components/GameEventOverlay';
+import { countRoundsPlayed } from '../utils/gameHelpers';
 
 export default function SpectatorPage() {
   const { id } = useParams();
@@ -72,15 +72,13 @@ export default function SpectatorPage() {
   useGameSocket(id, 'spectator');
 
   useEffect(() => {
-    dispatch(fetchGame(id));
-    dispatch(fetchRounds(id));
-    dispatch(clearNewRoundFlag()); // Xóa cờ khi vừa vào trang
+    dispatch(clearNewRoundFlag());
 
     return () => {
       dispatch({ type: 'games/clearCurrentGame' });
       dispatch({ type: 'games/clearError' });
       dispatch({ type: 'rounds/clearActiveRound' });
-      dispatch(clearNewRoundFlag()); // Xóa cờ khi rời khỏi trang
+      dispatch(clearNewRoundFlag());
     };
   }, [dispatch, id]);
 
@@ -378,10 +376,7 @@ export default function SpectatorPage() {
         {players
           .filter(p => p.is_active !== 0)
           .map((player) => {
-            const roundsPlayed = roundHistory.filter(r =>
-              r.status === 'completed' &&
-              (r.host_player_id === player.id || (r.results && r.results.some(res => res.player_id === player.id)))
-            ).length;
+            const roundsPlayed = countRoundsPlayed(player.id, roundHistory);
 
             const isThisHost = activeRound ? player.id === hostId : player.id === currentHostId;
             return (
@@ -416,10 +411,7 @@ export default function SpectatorPage() {
             {players
               .filter(p => p.is_active === 0)
               .map((player) => {
-                const roundsPlayed = roundHistory.filter(r =>
-                  r.status === 'completed' &&
-                  (r.host_player_id === player.id || (r.results && r.results.some(res => res.player_id === player.id)))
-                ).length;
+                const roundsPlayed = countRoundsPlayed(player.id, roundHistory);
 
                 return (
                   <SpectatorPlayerCard

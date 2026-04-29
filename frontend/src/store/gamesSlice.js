@@ -172,36 +172,9 @@ const gamesSlice = createSlice({
         state.loading = false;
         state.error = action.error.message;
       })
-      // addPlayer
-      .addCase(addPlayer.fulfilled, (state, action) => {
-        if (state.currentGame) {
-          const existingIndex = state.currentGame.players.findIndex(p => p.id === action.payload.id);
-          if (existingIndex !== -1) {
-            // Update existing player (reactivation)
-            state.currentGame.players[existingIndex] = action.payload;
-          } else {
-            // Add new player
-            state.currentGame.players.push(action.payload);
-          }
-        }
-      })
-      // removePlayer
-      .addCase(removePlayer.fulfilled, (state, action) => {
-        if (state.currentGame) {
-          if (action.payload.deactivated) {
-            // Update player as inactive
-            const player = state.currentGame.players.find(p => p.id === action.payload.playerId);
-            if (player) {
-              player.is_active = 0;
-            }
-          } else {
-            // Permanently remove from list
-            state.currentGame.players = state.currentGame.players.filter(
-              p => p.id !== action.payload.playerId
-            );
-          }
-        }
-      })
+      // addPlayer — state update via socket 'player_added' (onPlayerAdded)
+      // removePlayer — state update via socket 'player_removed' (onPlayerRemoved)
+
       // deleteGame
       .addCase(deleteGame.fulfilled, (state, action) => {
         state.list = state.list.filter(g => g.id !== action.payload.game_id);

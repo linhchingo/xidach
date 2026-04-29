@@ -18,8 +18,7 @@ import StarIcon from '@mui/icons-material/Star';
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import { toast } from 'react-toastify';
 
-import { fetchGame } from '../store/gamesSlice';
-import { startRound, submitResult, endRound, cancelRound, changeHost, fetchRounds, clearNewRoundFlag } from '../store/roundsSlice';
+import { startRound, submitResult, endRound, cancelRound, changeHost, clearNewRoundFlag } from '../store/roundsSlice';
 import { endGame, removePlayer, addPlayer } from '../store/gamesSlice';
 import PlayerCard from '../components/PlayerCard';
 import AddPlayerDialog from '../components/AddPlayerDialog';
@@ -32,6 +31,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import PinVerifyDialog from '../components/PinVerifyDialog';
 import NotFoundPage from './NotFoundPage';
 import useGameSocket from '../hooks/useGameSocket.js';
+import { countRoundsPlayed } from '../utils/gameHelpers';
 
 export default function GamePage() {
   const { id } = useParams();
@@ -70,14 +70,11 @@ export default function GamePage() {
   useGameSocket(id, 'manager');
 
   useEffect(() => {
-    dispatch(fetchGame(id));
-    dispatch(fetchRounds(id));
-
     return () => {
       dispatch({ type: 'games/clearCurrentGame' });
       dispatch({ type: 'games/clearError' });
       dispatch({ type: 'rounds/clearActiveRound' });
-      dispatch(clearNewRoundFlag()); // Xóa cờ khi rời khỏi trang
+      dispatch(clearNewRoundFlag());
     };
   }, [dispatch, id]);
 
@@ -741,11 +738,7 @@ export default function GamePage() {
         {players
           .filter(p => p.is_active !== 0) // Chỉ hiện người đang chơi khi xem chính
           .map((player) => {
-            // Tính số ván đã chơi cho mỗi người chơi
-            const roundsPlayed = roundHistory.filter(r =>
-              r.status === 'completed' &&
-              (r.host_player_id === player.id || (r.results && r.results.some(res => res.player_id === player.id)))
-            ).length;
+            const roundsPlayed = countRoundsPlayed(player.id, roundHistory);
 
             const isThisHost = activeRound ? player.id === hostId : player.id === currentHostId;
             return (
@@ -785,10 +778,7 @@ export default function GamePage() {
             {players
               .filter(p => p.is_active === 0)
               .map((player) => {
-                const roundsPlayed = roundHistory.filter(r =>
-                  r.status === 'completed' &&
-                  (r.host_player_id === player.id || (r.results && r.results.some(res => res.player_id === player.id)))
-                ).length;
+                const roundsPlayed = countRoundsPlayed(player.id, roundHistory);
 
                 return (
                   <PlayerCard
